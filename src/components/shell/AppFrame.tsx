@@ -78,28 +78,21 @@ function PublicShell({ children }: { children: React.ReactNode }) {
                 {l.label}
               </Link>
             ))}
-            {/* Always visible Log In Link */}
-            <Link
-              href="/login"
-              aria-current={pathname === "/login" ? "page" : undefined}
-              className={cn(
-                "inline-flex min-h-9 items-center rounded-md border-2 border-[#123C32] px-3 font-mono text-xs font-bold uppercase tracking-wider transition-all",
-                pathname === "/login"
-                  ? "bg-[#123C32] text-[#F4F0E5]"
-                  : "bg-white text-[#123C32] hover:bg-[#123C32] hover:text-[#F4F0E5]"
-              )}
-            >
-              {t("nav.login")}
-            </Link>
-
-            {/* Dashboard shortcut if user has an active session */}
-            {hydrated && role && (
+            {hydrated && role ? (
               <ButtonLink
                 href={role === "officer" ? "/officer/dashboard" : "/farmer/dashboard"}
                 size="sm"
-                className="ml-1 border-2 border-[#123C32] bg-[#123C32] font-mono text-xs font-bold uppercase tracking-wider text-[#F4F0E5] shadow-[2px_2px_0px_#252923] hover:bg-[#172B4D]"
+                className="ml-2 border-2 border-[#123C32] bg-[#123C32] font-mono text-xs font-bold uppercase tracking-wider text-[#F4F0E5] shadow-[2px_2px_0px_#252923] hover:bg-[#172B4D]"
               >
                 {t("nav.dashboard")}
+              </ButtonLink>
+            ) : (
+              <ButtonLink
+                href="/login"
+                size="sm"
+                className="ml-2 border-2 border-[#123C32] bg-[#123C32] font-mono text-xs font-bold uppercase tracking-wider text-[#F4F0E5] shadow-[2px_2px_0px_#252923] hover:bg-[#172B4D]"
+              >
+                {t("nav.login")}
               </ButtonLink>
             )}
           </nav>
