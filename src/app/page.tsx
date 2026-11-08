@@ -101,6 +101,7 @@ export default function LandingPage() {
               {/* District & Location Search Bar */}
               <div className="max-w-xl">
                 <form
+                  suppressHydrationWarning
                   onSubmit={(e) => {
                     e.preventDefault();
                     if (searchQuery.trim()) {
@@ -115,6 +116,7 @@ export default function LandingPage() {
                     <Search size={18} />
                   </div>
                   <input
+                    suppressHydrationWarning
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
@@ -122,6 +124,7 @@ export default function LandingPage() {
                     className="w-full bg-transparent px-3 py-3 font-sans text-sm text-[#252923] outline-none placeholder:text-[#252923]/40"
                   />
                   <button
+                    suppressHydrationWarning
                     type="submit"
                     className="border-l-2 border-[#123C32] bg-[#123C32] px-5 py-3 font-mono text-xs font-bold uppercase tracking-wider text-[#F4F0E5] transition-colors hover:bg-[#172B4D]"
                   >
