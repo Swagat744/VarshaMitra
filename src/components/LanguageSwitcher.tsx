@@ -9,6 +9,7 @@ export default function LanguageSwitcher({ onDark = false }: { onDark?: boolean 
 
   const option = (code: "en" | "mr", label: string, lang: string) => (
     <button
+      suppressHydrationWarning
       type="button"
       lang={lang}
       onClick={() => setLanguage(code)}
@@ -30,6 +31,7 @@ export default function LanguageSwitcher({ onDark = false }: { onDark?: boolean 
 
   return (
     <div
+      suppressHydrationWarning
       role="group"
       aria-label={t("shell.languageLabel")}
       className={cn(

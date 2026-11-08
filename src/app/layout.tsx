@@ -71,7 +71,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       className={`${inter.variable} ${spaceGrotesk.variable} ${ibmPlexMono.variable} ${sourceSerif.variable} ${notoSansDeva.variable} ${notoSerifDeva.variable} h-full antialiased`}
       suppressHydrationWarning
     >
-      <body className="flex min-h-full flex-col">
+      <body className="flex min-h-full flex-col" suppressHydrationWarning>
         <LanguageProvider>
           <AppStateProvider>
             <AppFrame>{children}</AppFrame>
