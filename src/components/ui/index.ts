@@ -8,4 +8,5 @@ export * from "./Form";
 export * from "./Data";
 export * from "./Photo";
 export * from "./Table";
+export * from "./MarkdownRenderer";
 export { default as RiskBadge } from "../RiskBadge";

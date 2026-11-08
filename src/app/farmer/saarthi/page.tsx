@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   Sparkles,
   Send,
@@ -27,6 +27,7 @@ import { useTranslation } from "@/i18n/LanguageContext";
 import { useAppState } from "@/hooks/useAppState";
 import { useLocationLabel } from "@/hooks/useLocationLabel";
 import { getCrop } from "@/data/crops";
+import { MarkdownRenderer } from "@/components/ui/MarkdownRenderer";
 import {
   api,
   type ChatConversationItem,
@@ -163,14 +164,30 @@ export default function SaarthiPage() {
     }
   };
 
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const msgCounterRef = useRef(0);
+  const isNearBottomRef = useRef(true);
+  const userSentMessageRef = useRef(false);
+  const lastConvIdRef = useRef<string | null>(null);
+  const scrollPositionsRef = useRef<Record<string, number>>({});
 
   const crop = getCrop(cropId);
   const cropName = crop ? t(crop.nameKey) : cropId;
   const stage = crop?.stages.find((s) => s.id === stageId);
   const stageName = stage ? t(stage.nameKey) : stageId;
+
+  // Track scroll position in message container to respect manual user scrolling
+  const handleScroll = useCallback(() => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    const threshold = 100; // pixels from bottom
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    isNearBottomRef.current = distanceFromBottom <= threshold;
+    if (activeConvId) {
+      scrollPositionsRef.current[activeConvId] = el.scrollTop;
+    }
+  }, [activeConvId]);
 
   // 1. Load conversations list
   useEffect(() => {
@@ -230,10 +247,63 @@ export default function SaarthiPage() {
     };
   }, [activeConvId]);
 
-  // Scroll to bottom when messages update
+  // 3. Controlled scroll manager (confined strictly to message container, zero window jumping)
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [currentConv?.messages, isSending]);
+    const el = scrollContainerRef.current;
+    if (!el || !currentConv) return;
+
+    const convId = currentConv.id;
+    const isNewConv = lastConvIdRef.current !== convId;
+
+    if (isNewConv) {
+      lastConvIdRef.current = convId;
+      const savedPosition = scrollPositionsRef.current[convId];
+      requestAnimationFrame(() => {
+        if (!scrollContainerRef.current) return;
+        if (typeof savedPosition === "number") {
+          scrollContainerRef.current.scrollTop = savedPosition;
+          const dist =
+            scrollContainerRef.current.scrollHeight -
+            savedPosition -
+            scrollContainerRef.current.clientHeight;
+          isNearBottomRef.current = dist <= 100;
+        } else {
+          scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+          isNearBottomRef.current = true;
+        }
+      });
+      return;
+    }
+
+    // When the user explicitly sent a message, scroll container to bottom
+    if (userSentMessageRef.current) {
+      userSentMessageRef.current = false;
+      requestAnimationFrame(() => {
+        if (scrollContainerRef.current) {
+          scrollContainerRef.current.scrollTo({
+            top: scrollContainerRef.current.scrollHeight,
+            behavior: "smooth",
+          });
+          isNearBottomRef.current = true;
+        }
+      });
+      return;
+    }
+
+    // When assistant message arrives or loading state changes,
+    // ONLY auto-scroll if the user is already near the bottom.
+    // If the user scrolled up to read an older message, preserve their exact scroll position.
+    if (isNearBottomRef.current) {
+      requestAnimationFrame(() => {
+        if (scrollContainerRef.current && isNearBottomRef.current) {
+          scrollContainerRef.current.scrollTo({
+            top: scrollContainerRef.current.scrollHeight,
+            behavior: "smooth",
+          });
+        }
+      });
+    }
+  }, [currentConv, isSending]);
 
   // Create new conversation
   const handleNewChat = async () => {
@@ -283,6 +353,8 @@ export default function SaarthiPage() {
     setInputMessage("");
     setIsSending(true);
     setErrorMsg(null);
+    userSentMessageRef.current = true;
+    isNearBottomRef.current = true;
 
     msgCounterRef.current += 1;
     const tempId = `temp_msg_${msgCounterRef.current}`;
@@ -341,6 +413,7 @@ export default function SaarthiPage() {
       setErrorMsg("Failed to communicate with Saarthi. Please retry.");
     } finally {
       setIsSending(false);
+      textareaRef.current?.focus({ preventScroll: true });
     }
   };
 
@@ -579,7 +652,11 @@ export default function SaarthiPage() {
           )}
 
           {/* Messages Scroll Area */}
-          <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+          <div
+            ref={scrollContainerRef}
+            onScroll={handleScroll}
+            className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4"
+          >
             {(!currentConv || currentConv.messages.length === 0) && (
               <div className="mx-auto max-w-xl py-6 text-center">
                 <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border-2 border-[#123C32] bg-white text-[#123C32] shadow-[4px_4px_0px_#123C32]">
@@ -639,7 +716,7 @@ export default function SaarthiPage() {
                           : "border-[#123C32] bg-white text-[#252923] shadow-[3px_3px_0px_#123C32]"
                       }`}
                     >
-                      <div className="whitespace-pre-wrap font-sans">{m.content}</div>
+                      <MarkdownRenderer content={m.content} isUser={isUser} />
 
                       <div className="mt-2 flex items-center justify-between gap-4 font-mono text-[10px] opacity-75">
                         <span>{new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
@@ -676,7 +753,6 @@ export default function SaarthiPage() {
                 <span>Saarthi is consulting agro-climatic models...</span>
               </div>
             )}
-            <div ref={messagesEndRef} />
           </div>
 
           {/* Composer Box */}
