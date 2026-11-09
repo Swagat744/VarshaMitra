@@ -21,16 +21,51 @@ import {
   MapPin,
   Building,
   Globe,
+  Search,
 } from "lucide-react";
 import { useTranslation } from "@/i18n/LanguageContext";
+import { MAHARASHTRA_LOCATIONS } from "@/data/maharashtraAdministrativeHierarchy";
 
 type TargetScope = "block" | "district" | "statewide";
 type TargetCrop = "all" | "onion" | "soybean" | "cotton" | "grapes" | "wheat";
 
+interface TalukaOptionItem {
+  id: string;
+  nameEn: string;
+  nameMr: string;
+  districtId: string;
+  districtNameEn: string;
+  districtNameMr: string;
+}
+
+// Flat list of all 275+ Maharashtra talukas with parent districts
+const ALL_TALUKAS: TalukaOptionItem[] = [];
+for (const dist of MAHARASHTRA_LOCATIONS) {
+  for (const tal of dist.talukas) {
+    ALL_TALUKAS.push({
+      id: tal.id,
+      nameEn: tal.nameEn,
+      nameMr: tal.nameMr,
+      districtId: dist.id,
+      districtNameEn: dist.nameEn,
+      districtNameMr: dist.nameMr,
+    });
+  }
+}
+ALL_TALUKAS.sort((a, b) => a.nameEn.localeCompare(b.nameEn));
+
+// List of all 36 Districts
+const ALL_DISTRICTS = MAHARASHTRA_LOCATIONS.map((d) => ({
+  id: d.id,
+  nameEn: d.nameEn,
+  nameMr: d.nameMr,
+  talukaCount: d.talukas.length,
+})).sort((a, b) => a.nameEn.localeCompare(b.nameEn));
+
 interface RuralSmsSimulatorProps {
-  blockName: string;
-  districtName: string;
-  riskLevel: string;
+  blockName?: string;
+  districtName?: string;
+  riskLevel?: string;
   primaryDriver?: string;
   forecastRainMm?: number;
 }
@@ -48,6 +83,42 @@ export default function RuralSmsSimulator({
   // ── Targeting Filters ──
   const [targetScope, setTargetScope] = useState<TargetScope>("block");
   const [targetCrop, setTargetCrop] = useState<TargetCrop>("all");
+
+  // Selected Taluka State (allows officer to choose or type ANY taluka)
+  const initialTaluka = useMemo(() => {
+    const found = ALL_TALUKAS.find(
+      (t) =>
+        t.nameEn.toLowerCase() === blockName.toLowerCase() ||
+        t.id.toLowerCase() === blockName.toLowerCase()
+    );
+    return found || ALL_TALUKAS.find((t) => t.id === "niphad") || ALL_TALUKAS[0];
+  }, [blockName]);
+
+  const [selectedTalukaId, setSelectedTalukaId] = useState<string>(initialTaluka.id);
+  const [talukaSearchQuery, setTalukaSearchQuery] = useState<string>("");
+
+  // Selected District State (if scope is district)
+  const initialDistrict = useMemo(() => {
+    const found = ALL_DISTRICTS.find(
+      (d) =>
+        d.nameEn.toLowerCase() === districtName.toLowerCase() ||
+        d.id.toLowerCase() === districtName.toLowerCase()
+    );
+    return found || ALL_DISTRICTS.find((d) => d.id === "nashik") || ALL_DISTRICTS[0];
+  }, [districtName]);
+
+  const [selectedDistrictId, setSelectedDistrictId] = useState<string>(initialDistrict.id);
+
+  // Active location metadata based on scope
+  const activeTaluka = useMemo(
+    () => ALL_TALUKAS.find((t) => t.id === selectedTalukaId) || initialTaluka,
+    [selectedTalukaId, initialTaluka]
+  );
+
+  const activeDistrict = useMemo(
+    () => ALL_DISTRICTS.find((d) => d.id === selectedDistrictId) || initialDistrict,
+    [selectedDistrictId, initialDistrict]
+  );
 
   // Dynamic farmer count calculation based on scope & crop
   const targetFarmerCount = useMemo(() => {
@@ -69,10 +140,25 @@ export default function RuralSmsSimulator({
       return isMr ? "महाराष्ट्र राज्य (सर्व ३६ जिल्हे)" : "Maharashtra Statewide (All 36 Districts)";
     }
     if (targetScope === "district") {
-      return isMr ? `${districtName} जिल्हा` : `${districtName} District`;
+      return isMr ? `${activeDistrict.nameMr} जिल्हा` : `${activeDistrict.nameEn} District`;
     }
-    return isMr ? `${blockName} (${districtName})` : `${blockName} (${districtName})`;
-  }, [targetScope, blockName, districtName, isMr]);
+    return isMr
+      ? `${activeTaluka.nameMr} (${activeTaluka.districtNameMr})`
+      : `${activeTaluka.nameEn} (${activeTaluka.districtNameEn})`;
+  }, [targetScope, activeTaluka, activeDistrict, isMr]);
+
+  // Filtered Talukas list based on user search query
+  const filteredTalukas = useMemo(() => {
+    if (!talukaSearchQuery.trim()) return ALL_TALUKAS;
+    const q = talukaSearchQuery.toLowerCase().trim();
+    return ALL_TALUKAS.filter(
+      (t) =>
+        t.nameEn.toLowerCase().includes(q) ||
+        t.nameMr.includes(q) ||
+        t.districtNameEn.toLowerCase().includes(q) ||
+        t.districtNameMr.includes(q)
+    );
+  }, [talukaSearchQuery]);
 
   // Pre-calibrated Advisory Library
   const ADVISORY_TEMPLATES = useMemo(
@@ -114,7 +200,7 @@ export default function RuralSmsSimulator({
     isMr ? ADVISORY_TEMPLATES[0].textMr : ADVISORY_TEMPLATES[0].textEn
   );
 
-  // Update message when scope or language changes
+  // Update message when scope, taluka, or language changes
   useEffect(() => {
     setMessage(isMr ? ADVISORY_TEMPLATES[0].textMr : ADVISORY_TEMPLATES[0].textEn);
   }, [targetLocationLabel, isMr]);
@@ -154,18 +240,21 @@ export default function RuralSmsSimulator({
 
       // Persist to shared store so Farmer Cockpit displays this emergency alert
       if (typeof window !== "undefined") {
+        const targetBlock = targetScope === "block" ? activeTaluka.nameEn : "";
+        const targetDist = targetScope === "statewide" ? "" : targetScope === "district" ? activeDistrict.nameEn : activeTaluka.districtNameEn;
+
         const alertObj = {
           id: `broadcast-${Date.now()}`,
-          blockName: targetScope === "block" ? blockName : "",
-          districtName: targetScope === "statewide" ? "" : districtName,
+          blockName: targetBlock,
+          districtName: targetDist,
           message,
           timestamp: new Date().toLocaleTimeString(isMr ? "mr-IN" : "en-IN", {
             hour: "2-digit",
             minute: "2-digit",
           }),
           sender: isMr
-            ? `तालुका कृषी अधिकारी (${blockName})`
-            : `Taluka Agri Officer (${blockName})`,
+            ? `तालुका कृषी अधिकारी (${targetScope === "block" ? activeTaluka.nameMr : activeDistrict.nameMr})`
+            : `Taluka Agri Officer (${targetScope === "block" ? activeTaluka.nameEn : activeDistrict.nameEn})`,
           farmerCount: targetFarmerCount,
         };
         try {
@@ -235,79 +324,159 @@ export default function RuralSmsSimulator({
                   : "Statewide Farmers"
                 : targetScope === "district"
                 ? isMr
-                  ? `शेतकरी (${districtName} जिल्हा)`
-                  : `in ${districtName} District`
+                  ? `शेतकरी (${activeDistrict.nameMr} जिल्हा)`
+                  : `in ${activeDistrict.nameEn} District`
                 : isMr
-                ? `शेतकरी (${blockName} तालुका)`
-                : `in ${blockName} Block`}
+                ? `शेतकरी (${activeTaluka.nameMr} तालुका)`
+                : `in ${activeTaluka.nameEn} Block`}
             </span>
           </span>
         </div>
       </div>
 
-      {/* ── TARGETING MATRIX STRIP (Filters for Location & Crop) ── */}
-      <div className="rounded-xl border-2 border-[#123C32]/30 bg-[#F4F0E5]/60 p-4 space-y-3">
+      {/* ── TARGETING MATRIX STRIP (Universal Taluka / District / Statewide Selector) ── */}
+      <div className="rounded-xl border-2 border-[#123C32]/30 bg-[#F4F0E5]/60 p-4 space-y-4">
         <div className="flex items-center justify-between border-b border-[#123C32]/10 pb-2">
           <div className="flex items-center gap-1.5 font-mono text-xs font-bold uppercase tracking-wider text-[#123C32]">
             <Filter size={14} />
             <span>{isMr ? "लक्ष्यित शेतकरी निवड निकष (Target Filters)" : "Target Farmer Filters"}</span>
           </div>
           <span className="font-mono text-[11px] text-[#252923]/60">
-            {isMr ? "स्थान व पिकानुसार थेट प्रसारण" : "Target by Location & Crop"}
+            {isMr ? "कोणताही तालुका किंवा जिल्हा निवडा" : "Choose Any Taluka or District in Maharashtra"}
           </span>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          {/* Location Scope Selector */}
-          <div>
-            <label className="font-mono text-[11px] font-bold uppercase text-[#252923]/70 block mb-1.5">
-              {isMr ? "१. प्रसारण कार्यक्षेत्र (Location Scope):" : "1. Location Scope:"}
-            </label>
-            <div className="grid grid-cols-3 gap-1.5 font-mono text-xs">
-              <button
-                type="button"
-                onClick={() => setTargetScope("block")}
-                className={`flex items-center justify-center gap-1 rounded-lg border px-2 py-2 font-semibold transition ${
-                  targetScope === "block"
-                    ? "border-[#123C32] bg-[#123C32] text-white shadow-xs"
-                    : "border-[#123C32]/20 bg-white text-[#252923] hover:bg-[#F4F0E5]"
-                }`}
-              >
-                <MapPin size={12} />
-                <span>{blockName}</span>
-              </button>
+        {/* Scope Mode Radio / Pills */}
+        <div>
+          <label className="font-mono text-[11px] font-bold uppercase text-[#252923]/70 block mb-1.5">
+            {isMr ? "१. प्रसारण कार्यक्षेत्र पातळी (Broadcast Scope):" : "1. Broadcast Scope Level:"}
+          </label>
+          <div className="grid grid-cols-3 gap-2 font-mono text-xs">
+            <button
+              type="button"
+              onClick={() => setTargetScope("block")}
+              className={`flex items-center justify-center gap-1.5 rounded-lg border-2 px-3 py-2 font-bold transition ${
+                targetScope === "block"
+                  ? "border-[#123C32] bg-[#123C32] text-white shadow-xs"
+                  : "border-[#123C32]/20 bg-white text-[#252923] hover:bg-[#F4F0E5]"
+              }`}
+            >
+              <MapPin size={13} />
+              <span>{isMr ? "विशिष्ट तालुका (Taluka)" : "Specific Taluka / Block"}</span>
+            </button>
 
-              <button
-                type="button"
-                onClick={() => setTargetScope("district")}
-                className={`flex items-center justify-center gap-1 rounded-lg border px-2 py-2 font-semibold transition ${
-                  targetScope === "district"
-                    ? "border-[#123C32] bg-[#123C32] text-white shadow-xs"
-                    : "border-[#123C32]/20 bg-white text-[#252923] hover:bg-[#F4F0E5]"
-                }`}
-              >
-                <Building size={12} />
-                <span>{districtName}</span>
-              </button>
+            <button
+              type="button"
+              onClick={() => setTargetScope("district")}
+              className={`flex items-center justify-center gap-1.5 rounded-lg border-2 px-3 py-2 font-bold transition ${
+                targetScope === "district"
+                  ? "border-[#123C32] bg-[#123C32] text-white shadow-xs"
+                  : "border-[#123C32]/20 bg-white text-[#252923] hover:bg-[#F4F0E5]"
+              }`}
+            >
+              <Building size={13} />
+              <span>{isMr ? "संपूर्ण जिल्हा (District)" : "Entire District"}</span>
+            </button>
 
-              <button
-                type="button"
-                onClick={() => setTargetScope("statewide")}
-                className={`flex items-center justify-center gap-1 rounded-lg border px-2 py-2 font-semibold transition ${
-                  targetScope === "statewide"
-                    ? "border-[#123C32] bg-[#123C32] text-white shadow-xs"
-                    : "border-[#123C32]/20 bg-white text-[#252923] hover:bg-[#F4F0E5]"
-                }`}
-              >
-                <Globe size={12} />
-                <span>{isMr ? "महाराष्ट्र (३६)" : "Statewide (36)"}</span>
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => setTargetScope("statewide")}
+              className={`flex items-center justify-center gap-1.5 rounded-lg border-2 px-3 py-2 font-bold transition ${
+                targetScope === "statewide"
+                  ? "border-[#123C32] bg-[#123C32] text-white shadow-xs"
+                  : "border-[#123C32]/20 bg-white text-[#252923] hover:bg-[#F4F0E5]"
+              }`}
+            >
+              <Globe size={13} />
+              <span>{isMr ? "संपूर्ण महाराष्ट्र (सर्व ३६ जिल्हे)" : "Statewide (All 36 Districts)"}</span>
+            </button>
           </div>
+        </div>
+
+        {/* Dynamic Location Dropdowns / Search based on Scope */}
+        <div className="grid gap-4 sm:grid-cols-2">
+          {/* If Scope is TALUKA */}
+          {targetScope === "block" && (
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="font-mono text-[11px] font-bold uppercase text-[#123C32]">
+                  {isMr ? "तालुका शोधा किंवा निवडा (Select / Search Taluka):" : "Search or Select Taluka:"}
+                </label>
+                <span className="font-mono text-[10px] text-[#252923]/60">
+                  {ALL_TALUKAS.length} {isMr ? "तालुके उपलब्ध" : "Talukas Available"}
+                </span>
+              </div>
+
+              {/* Quick Type Search Input */}
+              <div className="relative">
+                <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#252923]/50" />
+                <input
+                  type="text"
+                  value={talukaSearchQuery}
+                  onChange={(e) => setTalukaSearchQuery(e.target.value)}
+                  placeholder={isMr ? "तालुक्याचे नाव टाईप करा (उदा. निफाड, शहापूर, बारामती, दापोली...)" : "Type to filter talukas (e.g. Niphad, Shahapur, Baramati, Dapoli...)"}
+                  className="w-full rounded-lg border border-[#123C32]/30 bg-white pl-8 pr-3 py-1.5 font-mono text-xs text-[#252923] outline-none focus:border-[#123C32]"
+                />
+              </div>
+
+              {/* Taluka Dropdown */}
+              <select
+                value={selectedTalukaId}
+                onChange={(e) => {
+                  setSelectedTalukaId(e.target.value);
+                  setTalukaSearchQuery("");
+                }}
+                className="w-full rounded-lg border-2 border-[#123C32]/30 bg-white px-3 py-2 font-mono text-xs font-bold text-[#123C32] focus:border-[#123C32] outline-none"
+              >
+                {filteredTalukas.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {isMr
+                      ? `${t.nameMr} (${t.districtNameMr} जिल्हा)`
+                      : `${t.nameEn} (${t.districtNameEn} District)`}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* If Scope is DISTRICT */}
+          {targetScope === "district" && (
+            <div className="space-y-1.5">
+              <label className="font-mono text-[11px] font-bold uppercase text-[#123C32]">
+                {isMr ? "जिल्हा निवडा (Select District):" : "Select District:"}
+              </label>
+              <select
+                value={selectedDistrictId}
+                onChange={(e) => setSelectedDistrictId(e.target.value)}
+                className="w-full rounded-lg border-2 border-[#123C32]/30 bg-white px-3 py-2 font-mono text-xs font-bold text-[#123C32] focus:border-[#123C32] outline-none"
+              >
+                {ALL_DISTRICTS.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {isMr ? `${d.nameMr} जिल्हा` : `${d.nameEn} District`} ({d.talukaCount} {isMr ? "तालुके" : "talukas"})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* If Scope is STATEWIDE */}
+          {targetScope === "statewide" && (
+            <div className="flex flex-col justify-center rounded-lg border border-[#123C32]/20 bg-white p-3 font-mono text-xs">
+              <span className="font-bold text-[#123C32] flex items-center gap-1.5">
+                <Globe size={14} className="text-[#3B8B61]" />
+                {isMr ? "महाराष्ट्र राज्यव्यापी प्रसारण सक्रिय" : "Statewide Maharashtra Coverage Active"}
+              </span>
+              <p className="mt-0.5 font-sans text-[11px] text-[#252923]/70">
+                {isMr
+                  ? "हा संदेश महाराष्ट्रातील सर्व ३६ जिल्ह्यांतील नोंदणीकृत शेतकऱ्यांना प्रसारित केला जाईल."
+                  : "Advisory will broadcast to all registered farmers across all 36 districts of Maharashtra."}
+              </p>
+            </div>
+          )}
 
           {/* Crop Filter */}
-          <div>
-            <label className="font-mono text-[11px] font-bold uppercase text-[#252923]/70 block mb-1.5">
+          <div className="space-y-1.5">
+            <label className="font-mono text-[11px] font-bold uppercase text-[#252923]/70 block">
               {isMr ? "२. लक्ष्यित पीक (Target Crop):" : "2. Target Crop:"}
             </label>
             <select

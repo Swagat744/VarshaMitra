@@ -102,6 +102,7 @@ export default function LandingPage() {
               <div className="max-w-xl">
                 <form
                   suppressHydrationWarning
+                  autoComplete="off"
                   onSubmit={(e) => {
                     e.preventDefault();
                     if (searchQuery.trim()) {
@@ -116,16 +117,23 @@ export default function LandingPage() {
                     <Search size={18} />
                   </div>
                   <input
+                    id="landing-search-input"
+                    name="q"
+                    type="search"
+                    autoComplete="off"
+                    data-lpignore="true"
+                    data-1p-ignore="true"
+                    data-form-type="other"
                     suppressHydrationWarning
-                    type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search your district or taluka (e.g. Pune, Baramati, Nagpur)..."
                     className="w-full bg-transparent px-3 py-3 font-sans text-sm text-[#252923] outline-none placeholder:text-[#252923]/40"
                   />
                   <button
-                    suppressHydrationWarning
+                    id="landing-search-btn"
                     type="submit"
+                    suppressHydrationWarning
                     className="border-l-2 border-[#123C32] bg-[#123C32] px-5 py-3 font-mono text-xs font-bold uppercase tracking-wider text-[#F4F0E5] transition-colors hover:bg-[#172B4D]"
                   >
                     Locate
