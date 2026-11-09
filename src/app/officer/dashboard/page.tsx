@@ -479,7 +479,7 @@ export default function OfficerDashboard() {
                   onChange={(e) => setSelectedDistrict(e.target.value)}
                   className="rounded-md border-2 border-[#123C32]/30 bg-[#F4F0E5] px-2.5 py-1 font-mono text-xs font-bold text-[#123C32] outline-none"
                 >
-                  <option value="all">{isMr ? "सर्व ३६ जिल्हे (All Maharashtra)" : "All 36 Districts"}</option>
+                  <option value="all">{isMr ? "सर्व ३६ जिल्हे" : "All 36 Districts"}</option>
                   {districtList.map((d) => (
                     <option key={d} value={d}>
                       {d}

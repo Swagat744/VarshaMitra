@@ -265,7 +265,10 @@ export default function BlockPanel({ item, onClose }: { item: RiskSummaryItem; o
                   <span>{isMr ? "बाजारभाव (कांदा)" : "Mandi Rate (Onion)"}</span>
                 </div>
                 <p className="mt-1 font-mono text-sm font-black text-[#123C32]">
-                  ₹२,४५० <span className="text-[10px] font-normal text-[#252923]/70">/ क्विंटल</span>
+                  {isMr ? "₹२,४५०" : "₹2,450"}{" "}
+                  <span className="text-[10px] font-normal text-[#252923]/70">
+                    {isMr ? "/ क्विंटल" : "/ Quintal"}
+                  </span>
                 </p>
                 <p className="text-[10px] text-[#3B8B61] font-semibold mt-0.5">
                   {isMr ? "निफाड मुख्य APMC" : "Niphad Mandi Hub"}
@@ -278,7 +281,8 @@ export default function BlockPanel({ item, onClose }: { item: RiskSummaryItem; o
                   <span>{isMr ? "जमीन वाफसा" : "Soil Vapsa"}</span>
                 </div>
                 <p className="mt-1 font-mono text-sm font-black text-[#123C32]">
-                  ३०.७% <span className="text-[10px] font-normal text-[#252923]/70">Volumetric</span>
+                  {isMr ? "३०.७%" : "30.7%"}{" "}
+                  <span className="text-[10px] font-normal text-[#252923]/70">Volumetric</span>
                 </p>
                 <p className="text-[10px] text-[#3B8B61] font-semibold mt-0.5">
                   {isMr ? "५०:५० हवा/पाणी समतोल" : "Optimal 50:50 Vapsa"}

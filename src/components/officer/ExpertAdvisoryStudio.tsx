@@ -24,19 +24,22 @@ import { useTranslation } from "@/i18n/LanguageContext";
 interface AdvisoryTemplate {
   id: string;
   crop: string;
+  cropEn: string;
   cropMr: string;
   category: "disease" | "drought" | "irrigation" | "nutrition";
   titleEn: string;
   titleMr: string;
   contentEn: string;
   contentMr: string;
-  universitySource: string;
+  universitySourceEn: string;
+  universitySourceMr: string;
 }
 
 const UNIVERSITY_TEMPLATES: AdvisoryTemplate[] = [
   {
     id: "onion-purple-blotch",
     crop: "Onion",
+    cropEn: "Onion",
     cropMr: "कांदा",
     category: "disease",
     titleEn: "Preventive Spray for Purple Blotch & Thrips in Rabi Onion",
@@ -45,11 +48,13 @@ const UNIVERSITY_TEMPLATES: AdvisoryTemplate[] = [
       "Alert for Niphad taluka: High night humidity & dew favoring purple blotch (Alternaria porri). Spray Difenoconazole 25% EC @ 0.5 ml/L water or Tebuconazole @ 1 ml/L. Add sticker. Control thrips with Fipronil 5% SC @ 1.5 ml/L.",
     contentMr:
       "निफाड तालुका सतर्कता: रात्रीचे धुके व दवबिंदूंमुळे रब्बी कांद्यावर जांभळा करपा व फुलकिडे (थ्रिप्स) प्रादुर्भावाची शक्यता. नियंत्रणासाठी डायफेनोकोनॅझोल २५% EC ०.५ मिली किंवा टेब्युकोनॅझोल १ मिली प्रति लिटर पाण्यात मिसळून फवारावे. सोबत चिकटद्रव्य (Sticker) वापरावे.",
-    universitySource: "महात्मा फुले कृषी विद्यापीठ (MPKV), राहुरी",
+    universitySourceEn: "Mahatma Phule Krishi Vidyapeeth (MPKV), Rahuri",
+    universitySourceMr: "महात्मा फुले कृषी विद्यापीठ (MPKV), राहुरी",
   },
   {
     id: "dryspell-potash",
-    crop: "Soybean / Gram",
+    crop: "Soybean",
+    cropEn: "Soybean / Gram",
     cropMr: "सोयाबीन / हरभरा",
     category: "drought",
     titleEn: "Moisture Stress Mitigation via Potassium Nitrate Foliar Spray",
@@ -58,11 +63,13 @@ const UNIVERSITY_TEMPLATES: AdvisoryTemplate[] = [
       "Due to prolonged dry spell (>14 days), crops facing moisture stress. Apply foliar spray of Potassium Nitrate (13:00:45) @ 10g/L or Urea @ 20g/L during early morning or evening hours to induce drought tolerance and reduce leaf transpiration.",
     contentMr:
       "१४ दिवसांहून अधिक पावसाच्या खंडामुळे पिकांमध्ये ओलावा घट जाणवत आहे. पाण्याचा ताण सहन करण्यासाठी व पानांतून बाष्पीभवन रोखण्यासाठी सकाळी किंवा संध्याकाळी पोटॅशियम नायट्रेट (१३:००:४५) १० ग्रॅम किंवा युरिया २० ग्रॅम प्रति लिटर पाणी फवारणी करावी.",
-    universitySource: "वसंतराव नाईक मराठवाडा कृषी विद्यापीठ (VNMKV), परभणी",
+    universitySourceEn: "Vasantrao Naik Marathwada Krishi Vidyapeeth (VNMKV)",
+    universitySourceMr: "वसंतराव नाईक मराठवाडा कृषी विद्यापीठ (VNMKV), परभणी",
   },
   {
     id: "grapes-downy-mildew",
     crop: "Grapes",
+    cropEn: "Grapes",
     cropMr: "द्राक्ष",
     category: "disease",
     titleEn: "Canopy & Downy Mildew Management Post-Pruning",
@@ -71,11 +78,13 @@ const UNIVERSITY_TEMPLATES: AdvisoryTemplate[] = [
       "For Nashik & Niphad vineyards: In case of overcast sky, apply Metalaxyl 8% + Mancozeb 64% WP @ 2.5g/L. Maintain cluster aeration. Regulate Gibberellic Acid (GA3) dosage carefully as per berry elongation stage.",
     contentMr:
       "नाशिक व निफाड द्राक्ष उत्पादक: ढगाळ वातावरण निर्माण झाल्यास डाऊनी मिल्ड्यू प्रतिबंधासाठी मेटॅलॅक्सिल ८% + मँकोझेब ६४% WP २.५ ग्रॅम प्रति लिटर फवारावे. घडामध्ये हवा खेळती ठेवावी व मणी वाढीनुसार जिब्रेलिक ऍसिड (GA3) चे योग्य नियोजन करावे.",
-    universitySource: "राष्ट्रीय द्राक्ष संशोधन केंद्र (NRC Grapes), पुणे",
+    universitySourceEn: "National Research Centre for Grapes (ICAR-NRCG), Pune",
+    universitySourceMr: "राष्ट्रीय द्राक्ष संशोधन केंद्र (NRC Grapes), पुणे",
   },
   {
     id: "wheat-cri-irrigation",
     crop: "Wheat",
+    cropEn: "Wheat",
     cropMr: "गहू",
     category: "irrigation",
     titleEn: "Critical First Irrigation at Crown Root Initiation (CRI) Stage",
@@ -84,19 +93,25 @@ const UNIVERSITY_TEMPLATES: AdvisoryTemplate[] = [
       "Wheat sown 20-22 days ago is entering Crown Root Initiation stage. This stage is most critical for grain tillering. Ensure mandatory light irrigation; water stress now reduces final yield by up to 35%.",
     contentMr:
       "पेरणीनंतर २० ते २२ दिवसांनी गहू पिकाची मुकुट मुळे फुटण्याची (CRI) अतिसंवेदनशील अवस्था सुरू होते. फुटवे चांगल्या संख्येने येण्यासाठी पहिली पाणीपाळी तात्काळ द्यावी. या अवस्थेत पाण्याचा ताण पडल्यास उत्पादनात ३५% पर्यंत घट होऊ शकते.",
-    universitySource: "भारतीय कृषी संशोधन परिषद (ICAR-IARI) गहू विभाग",
+    universitySourceEn: "ICAR - Indian Agricultural Research Institute (IARI)",
+    universitySourceMr: "भारतीय कृषी संशोधन परिषद (ICAR-IARI) गहू विभाग",
   },
 ];
 
 interface BroadcastHistoryItem {
   id: string;
-  timestamp: string;
-  title: string;
-  crop: string;
-  taluka: string;
+  timestampEn: string;
+  timestampMr: string;
+  titleEn: string;
+  titleMr: string;
+  cropEn: string;
+  cropMr: string;
+  talukaEn: string;
+  talukaMr: string;
   channels: string[];
   reachCount: number;
-  officerSign: string;
+  officerSignEn: string;
+  officerSignMr: string;
   dltId: string;
 }
 
@@ -137,28 +152,48 @@ export default function ExpertAdvisoryStudio({
   const [isDispatching, setIsDispatching] = useState(false);
   const [lastDispatched, setLastDispatched] = useState<BroadcastHistoryItem | null>(null);
 
-  // History log
+  // Sync title and message when language changes
+  useEffect(() => {
+    const tpl =
+      UNIVERSITY_TEMPLATES.find(
+        (t) => t.crop.toLowerCase() === targetCrop.toLowerCase()
+      ) || UNIVERSITY_TEMPLATES[0];
+    setTitle(isMr ? tpl.titleMr : tpl.titleEn);
+    setMessage(isMr ? tpl.contentMr : tpl.contentEn);
+  }, [isMr]);
+
+  // History log with full bilingual fields
   const [history, setHistory] = useState<BroadcastHistoryItem[]>([
     {
       id: "ADV-DISPATCH-901",
-      timestamp: "काल दुपारी ०३:४५",
-      title: "कांद्यावरील करपा प्रतिबंधक फवारणी मार्गदर्शक",
-      crop: "कांदा (Onion)",
-      taluka: "निफाड (Niphad)",
+      timestampEn: "Yesterday, 03:45 PM",
+      timestampMr: "काल दुपारी ०३:४५",
+      titleEn: "Preventive Spray for Purple Blotch & Thrips in Rabi Onion",
+      titleMr: "कांद्यावरील करपा प्रतिबंधक फवारणी मार्गदर्शक",
+      cropEn: "Onion",
+      cropMr: "कांदा (Onion)",
+      talukaEn: "Niphad",
+      talukaMr: "निफाड",
       channels: ["App Banner", "mKisan SMS", "IVRS Call"],
       reachCount: 14250,
-      officerSign: "दिलीप पाटील, तालुका कृषी अधिकारी, निफाड",
+      officerSignEn: "Dilip Patil, Taluka Agriculture Officer, Niphad",
+      officerSignMr: "दिलीप पाटील, तालुका कृषी अधिकारी, निफाड",
       dltId: "MH-AGRI-100492",
     },
     {
       id: "ADV-DISPATCH-884",
-      timestamp: "०५ नोव्हेंबर २०२६",
-      title: "पावसाचा खंड: पोटॅशियम नायट्रेट ओलावा संवर्धन",
-      crop: "सोयाबीन (Soybean)",
-      taluka: "बारामती (Baramati)",
+      timestampEn: "05 Nov 2026",
+      timestampMr: "०५ नोव्हेंबर २०२६",
+      titleEn: "Dry Spell: Moisture Stress Mitigation via Foliar Spray",
+      titleMr: "पावसाचा खंड: पोटॅशियम नायट्रेट ओलावा संवर्धन",
+      cropEn: "Soybean",
+      cropMr: "सोयाबीन (Soybean)",
+      talukaEn: "Baramati",
+      talukaMr: "बारामती",
       channels: ["App Banner", "mKisan SMS"],
       reachCount: 11800,
-      officerSign: "विजय देशमुख, कृषी अधिकारी, बारामती",
+      officerSignEn: "Vijay Deshmukh, Agriculture Officer, Baramati",
+      officerSignMr: "विजय देशमुख, कृषी अधिकारी, बारामती",
       dltId: "MH-AGRI-100488",
     },
   ]);
@@ -185,12 +220,17 @@ export default function ExpertAdvisoryStudio({
 
     const textToSpeak = `${title}. ${message}`;
     const utterance = new SpeechSynthesisUtterance(textToSpeak);
+    utterance.lang = isMr ? "mr-IN" : "en-IN";
 
-    // Prefer Marathi or Hindi voice if available
+    // Prefer Marathi or Indian English voice if available
     const voices = window.speechSynthesis.getVoices();
-    const marathiVoice = voices.find((v) => v.lang.includes("mr") || v.lang.includes("hi"));
-    if (marathiVoice) {
-      utterance.voice = marathiVoice;
+    const matchedVoice = voices.find((v) =>
+      isMr
+        ? v.lang.includes("mr") || v.lang.includes("hi")
+        : v.lang.includes("en-IN") || v.lang.includes("en")
+    );
+    if (matchedVoice) {
+      utterance.voice = matchedVoice;
     }
     utterance.rate = 0.95;
 
@@ -207,24 +247,33 @@ export default function ExpertAdvisoryStudio({
 
     setTimeout(() => {
       const selectedChannels: string[] = [];
-      if (channelApp) selectedChannels.push("Farmer Cockpit Alert");
-      if (channelSms) selectedChannels.push("mKisan SMS Gateway");
-      if (channelVoice) selectedChannels.push("IVRS Voice Outdial");
+      if (channelApp) selectedChannels.push(isMr ? "शेतकरी ॲप सूचना" : "Farmer App Alert");
+      if (channelSms) selectedChannels.push(isMr ? "mKisan SMS" : "mKisan SMS Gateway");
+      if (channelVoice) selectedChannels.push(isMr ? "IVRS कॉल" : "IVRS Voice Outdial");
+
+      const nowTimeEn = new Date().toLocaleTimeString("en-IN", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+      const nowTimeMr = new Date().toLocaleTimeString("mr-IN", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
 
       const newItem: BroadcastHistoryItem = {
         id: `ADV-DISPATCH-${Math.floor(100 + Math.random() * 900)}`,
-        timestamp: new Date().toLocaleTimeString(isMr ? "mr-IN" : "en-IN", {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-        title,
-        crop: targetCrop,
-        taluka: targetTaluka,
+        timestampEn: nowTimeEn,
+        timestampMr: nowTimeMr,
+        titleEn: title,
+        titleMr: title,
+        cropEn: targetCrop,
+        cropMr: targetCrop,
+        talukaEn: targetTaluka,
+        talukaMr: targetTaluka,
         channels: selectedChannels,
         reachCount: 14850,
-        officerSign: isMr
-          ? "दिलीप पाटील, तालुका कृषी अधिकारी (TAO), निफाड"
-          : "Dilip Patil, Taluka Agriculture Officer, Niphad",
+        officerSignEn: "Dilip Patil, Taluka Agriculture Officer, Niphad",
+        officerSignMr: "दिलीप पाटील, तालुका कृषी अधिकारी (TAO), निफाड",
         dltId: `MH-AGRI-${Math.floor(100000 + Math.random() * 900000)}`,
       };
 
@@ -239,8 +288,8 @@ export default function ExpertAdvisoryStudio({
           blockName: targetTaluka,
           districtName: initialDistrict,
           message: `${title}: ${message}`,
-          timestamp: newItem.timestamp,
-          sender: newItem.officerSign,
+          timestamp: isMr ? newItem.timestampMr : newItem.timestampEn,
+          sender: isMr ? newItem.officerSignMr : newItem.officerSignEn,
           farmerCount: newItem.reachCount,
         };
         const existing = JSON.parse(
@@ -284,7 +333,7 @@ export default function ExpertAdvisoryStudio({
             <p className="font-sans text-xs text-white/80 max-w-3xl">
               {isMr
                 ? "तालुका, पीक आणि वाढीच्या अवस्थेनुसार निवडक शेतकऱ्यांना कृषी विद्यापीठ प्रमाणित फवारणी व सिंचन सल्ला एकाच क्लिकवर शेतकरी पोर्टल, शासकीय SMS (mKisan) व मराठी व्हॉईस कॉलद्वारे पोहोचवा."
-                : "Targeted agro-climatic advisories dispatched simultaneously to Farmer Cockpits, official mKisan SMS gateways, and automated Marathi IVRS voice calls."}
+                : "Targeted agro-climatic advisories dispatched simultaneously to Farmer Cockpits, official mKisan SMS gateways, and automated IVRS voice calls."}
             </p>
           </div>
 
@@ -294,7 +343,7 @@ export default function ExpertAdvisoryStudio({
                 {isMr ? "लक्ष्यित शेतकरी संख्या" : "Target Reach"}
               </span>
               <span className="font-mono text-base font-black text-[#E6A52E]">
-                १४,८५० शेतकरी
+                {isMr ? "१४,८५० शेतकरी" : "14,850 Farmers"}
               </span>
             </div>
           </div>
@@ -324,12 +373,12 @@ export default function ExpertAdvisoryStudio({
                   onChange={(e) => setTargetTaluka(e.target.value)}
                   className="w-full rounded-md border-2 border-[#123C32]/30 bg-[#F4F0E5] px-2.5 py-1.5 font-mono text-xs font-bold text-[#123C32] focus:border-[#123C32] outline-none"
                 >
-                  <option value="Niphad">Niphad (निफाड)</option>
-                  <option value="Baramati">Baramati (बारामती)</option>
-                  <option value="Igatpuri">Igatpuri (इगतपुरी)</option>
-                  <option value="Dindori">Dindori (दिंडोरी)</option>
-                  <option value="Junnar">Junnar (जुन्नर)</option>
-                  <option value="Solapur">North Solapur (उत्तर सोलापूर)</option>
+                  <option value="Niphad">{isMr ? "निफाड (Niphad)" : "Niphad"}</option>
+                  <option value="Baramati">{isMr ? "बारामती (Baramati)" : "Baramati"}</option>
+                  <option value="Igatpuri">{isMr ? "इगतपुरी (Igatpuri)" : "Igatpuri"}</option>
+                  <option value="Dindori">{isMr ? "दिंडोरी (Dindori)" : "Dindori"}</option>
+                  <option value="Junnar">{isMr ? "जुन्नर (Junnar)" : "Junnar"}</option>
+                  <option value="Solapur">{isMr ? "उत्तर सोलापूर (North Solapur)" : "North Solapur"}</option>
                 </select>
               </div>
 
@@ -342,12 +391,12 @@ export default function ExpertAdvisoryStudio({
                   onChange={(e) => setTargetCrop(e.target.value)}
                   className="w-full rounded-md border-2 border-[#123C32]/30 bg-[#F4F0E5] px-2.5 py-1.5 font-mono text-xs font-bold text-[#123C32] focus:border-[#123C32] outline-none"
                 >
-                  <option value="Onion">कांदा (Onion)</option>
-                  <option value="Soybean">सोयाबीन (Soybean)</option>
-                  <option value="Grapes">द्राक्ष (Grapes)</option>
-                  <option value="Wheat">गहू (Wheat)</option>
-                  <option value="Cotton">कापूस (Cotton)</option>
-                  <option value="All Crops">सर्व पिके (All Crops)</option>
+                  <option value="Onion">{isMr ? "कांदा (Onion)" : "Onion"}</option>
+                  <option value="Soybean">{isMr ? "सोयाबीन (Soybean)" : "Soybean"}</option>
+                  <option value="Grapes">{isMr ? "द्राक्ष (Grapes)" : "Grapes"}</option>
+                  <option value="Wheat">{isMr ? "गहू (Wheat)" : "Wheat"}</option>
+                  <option value="Cotton">{isMr ? "कापूस (Cotton)" : "Cotton"}</option>
+                  <option value="All Crops">{isMr ? "सर्व पिके (All Crops)" : "All Crops"}</option>
                 </select>
               </div>
 
@@ -360,10 +409,10 @@ export default function ExpertAdvisoryStudio({
                   onChange={(e) => setTargetStage(e.target.value)}
                   className="w-full rounded-md border-2 border-[#123C32]/30 bg-[#F4F0E5] px-2.5 py-1.5 font-mono text-xs font-bold text-[#123C32] focus:border-[#123C32] outline-none"
                 >
-                  <option value="Vegetative">शाकीय वाढ (Vegetative)</option>
-                  <option value="Sowing">पेरणी / पुनर्लागवड (Sowing/Transplanting)</option>
-                  <option value="Flowering">फुलोरा / मणी सेटिंग (Flowering)</option>
-                  <option value="Maturity">पक्वता / काढणी (Maturity)</option>
+                  <option value="Vegetative">{isMr ? "शाकीय वाढ (Vegetative)" : "Vegetative"}</option>
+                  <option value="Sowing">{isMr ? "पेरणी / पुनर्लागवड (Sowing/Transplanting)" : "Sowing / Transplanting"}</option>
+                  <option value="Flowering">{isMr ? "फुलोरा / मणी सेटिंग (Flowering)" : "Flowering"}</option>
+                  <option value="Maturity">{isMr ? "पक्वता / काढणी (Maturity)" : "Maturity / Harvest"}</option>
                 </select>
               </div>
             </div>
@@ -422,7 +471,7 @@ export default function ExpertAdvisoryStudio({
                   <strong>
                     {isMr
                       ? "दिलीप पाटील, तालुका कृषी अधिकारी (TAO), निफाड"
-                      : "Dilip Patil, Taluka Agriculture Officer, Niphad"}
+                      : "Dilip Patil, Taluka Agriculture Officer (TAO), Niphad"}
                   </strong>
                 </span>
               </div>
@@ -559,10 +608,10 @@ export default function ExpertAdvisoryStudio({
                 >
                   <div className="flex items-center justify-between">
                     <span className="rounded bg-[#123C32] px-1.5 py-0.5 font-mono text-[9px] font-bold text-white">
-                      {isMr ? tpl.cropMr : tpl.crop}
+                      {isMr ? tpl.cropMr : tpl.cropEn}
                     </span>
                     <span className="font-mono text-[10px] text-[#252923]/60">
-                      {tpl.universitySource}
+                      {isMr ? tpl.universitySourceMr : tpl.universitySourceEn}
                     </span>
                   </div>
                   <h4 className="mt-1 font-display text-xs font-bold text-[#123C32]">
@@ -580,7 +629,7 @@ export default function ExpertAdvisoryStudio({
                 {isMr ? "अलिकडील प्रसारण इतिहास" : "Recent Broadcast Dispatches"}
               </span>
               <span className="font-mono text-[10px] text-[#252923]/60">
-                {history.length} records
+                {history.length} {isMr ? "नोंदी" : "records"}
               </span>
             </div>
 
@@ -595,18 +644,19 @@ export default function ExpertAdvisoryStudio({
                       {item.id}
                     </span>
                     <span className="font-mono text-[10px] text-[#252923]/60">
-                      {item.timestamp}
+                      {isMr ? item.timestampMr : item.timestampEn}
                     </span>
                   </div>
                   <h5 className="font-display font-bold text-[#123C32]">
-                    {item.title}
+                    {isMr ? item.titleMr : item.titleEn}
                   </h5>
                   <div className="flex flex-wrap items-center justify-between gap-1 border-t border-[#123C32]/10 pt-1 font-mono text-[10px] text-[#252923]/70">
                     <span>
-                      {item.crop} • {item.taluka}
+                      {isMr ? item.cropMr : item.cropEn} • {isMr ? item.talukaMr : item.talukaEn}
                     </span>
                     <span className="font-bold text-[#172B4D]">
-                      {item.reachCount.toLocaleString("en-IN")} reach
+                      {item.reachCount.toLocaleString("en-IN")}{" "}
+                      {isMr ? "शेतकऱ्यांना पोहोच" : "farmers reached"}
                     </span>
                   </div>
                 </div>

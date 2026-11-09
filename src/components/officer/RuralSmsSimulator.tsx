@@ -38,12 +38,20 @@ export default function RuralSmsSimulator({
 
   // Generated SMS message based on block data
   const defaultSmsText = useMemo(() => {
-    if (riskLevel === "critical" || riskLevel === "high") {
-      return `[VarshaMitra/महाकृषी]\n${blockName} (${districtName}): पुढील ७ दिवस पावसाचा खंड कायम राहण्याचा अंदाज. सोयाबीन/कापूस पिकाला तुषार सिंचनाने हलके पाणी द्यावे. PMFBY मदत: 14447`;
+    if (isMr) {
+      if (riskLevel === "critical" || riskLevel === "high") {
+        return `[VarshaMitra/महाकृषी]\n${blockName} (${districtName}): पुढील ७ दिवस पावसाचा खंड कायम राहण्याचा अंदाज. सोयाबीन/कापूस पिकाला तुषार सिंचनाने हलके पाणी द्यावे. PMFBY मदत: 14447`;
+      } else {
+        return `[VarshaMitra/महाकृषी]\n${blockName} (${districtName}): पुढील १४ दिवसांत ${forecastRainMm} मिमी पाऊस अपेक्षित. शेतात वाफसा तपासूनच आंतरमशागत व खत व्यवस्थापन करावे.`;
+      }
     } else {
-      return `[VarshaMitra/महाकृषी]\n${blockName} (${districtName}): पुढील १४ दिवसांत ${forecastRainMm} मिमी पाऊस अपेक्षित. शेतात वाफसा तपासूनच आंतरमशागत व खत व्यवस्थापन करावे.`;
+      if (riskLevel === "critical" || riskLevel === "high") {
+        return `[VarshaMitra/AgriDept]\n${blockName} (${districtName}): Prolonged dry spell forecast for next 7 days. Provide light sprinkler irrigation to standing crops. PMFBY Helpline: 14447`;
+      } else {
+        return `[VarshaMitra/AgriDept]\n${blockName} (${districtName}): ${forecastRainMm} mm rain expected over next 14 days. Monitor soil moisture (Vapsa) before intercultural operations.`;
+      }
     }
-  }, [blockName, districtName, riskLevel, forecastRainMm]);
+  }, [blockName, districtName, riskLevel, forecastRainMm, isMr]);
 
   const [message, setMessage] = useState(defaultSmsText);
   const [isBroadcasting, setIsBroadcasting] = useState(false);
@@ -68,7 +76,7 @@ export default function RuralSmsSimulator({
 
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(message);
-    utterance.lang = "mr-IN";
+    utterance.lang = isMr ? "mr-IN" : "en-IN";
     utterance.rate = 0.9;
 
     utterance.onstart = () => setIsSpeaking(true);
@@ -91,8 +99,8 @@ export default function RuralSmsSimulator({
           blockName,
           districtName,
           message,
-          timestamp: new Date().toLocaleTimeString("mr-IN", { hour: "2-digit", minute: "2-digit" }),
-          sender: `तालुका कृषी अधिकारी (${blockName})`,
+          timestamp: new Date().toLocaleTimeString(isMr ? "mr-IN" : "en-IN", { hour: "2-digit", minute: "2-digit" }),
+          sender: isMr ? `तालुका कृषी अधिकारी (${blockName})` : `Taluka Agri Officer (${blockName})`,
           farmerCount,
         };
         try {

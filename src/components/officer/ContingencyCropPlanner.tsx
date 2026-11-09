@@ -23,18 +23,23 @@ interface ContingencyCrop {
   id: string;
   nameEn: string;
   nameMr: string;
-  variety: string;
-  durationDays: string;
-  rainfallNeedMm: string;
+  varietyEn: string;
+  varietyMr: string;
+  durationDaysEn: string;
+  durationDaysMr: string;
+  rainfallNeedMmEn: string;
+  rainfallNeedMmMr: string;
   suitabilityConditionEn: string;
   suitabilityConditionMr: string;
   mahabeejStockQtl: number;
-  depotLocation: string;
+  depotLocationEn: string;
   depotLocationMr: string;
-  subsidyRate: string;
+  subsidyRateEn: string;
+  subsidyRateMr: string;
   standardPricePerKg: number;
   subsidizedPricePerKg: number;
-  universityAdvisory: string;
+  universityAdvisoryEn: string;
+  universityAdvisoryMr: string;
   recommendedPracticesMr: string[];
   recommendedPracticesEn: string[];
 }
@@ -44,18 +49,23 @@ const CONTINGENCY_CROPS: ContingencyCrop[] = [
     id: "horsegram",
     nameEn: "Horse Gram (Kulthi)",
     nameMr: "हुलगा (कुळीथ)",
-    variety: "सीना (Sina) / AK-42",
-    durationDays: "६५ - ७५ दिवस (65-75 Days)",
-    rainfallNeedMm: "१५० - २५० मिमी",
+    varietyEn: "Sina / AK-42",
+    varietyMr: "सीना / AK-42",
+    durationDaysEn: "65 - 75 Days",
+    durationDaysMr: "६५ - ७५ दिवस",
+    rainfallNeedMmEn: "150 - 250 mm",
+    rainfallNeedMmMr: "१५० - २५० मिमी",
     suitabilityConditionEn: "Severe dry-spell, late sowing (August-September), shallow to medium soils.",
     suitabilityConditionMr: "पावसाचा तीव्र खंड, उशिरा पेरणी व हलकी ते मध्यम जमीन यासाठी अत्यंत योग्य.",
     mahabeejStockQtl: 420,
-    depotLocation: "Niphad Taluka Kharedi-Vikri Sangha Depot",
+    depotLocationEn: "Niphad Taluka Kharedi-Vikri Sangha Depot, Nashik",
     depotLocationMr: "निफाड तालुका खरेदी-विक्री संघ आगार, नाशिक",
-    subsidyRate: "५०% महाडिबीटी अनुदान (NFSM 50%)",
+    subsidyRateEn: "50% MahaDBT Subsidy (NFSM 50%)",
+    subsidyRateMr: "५०% महाडिबीटी अनुदान (NFSM 50%)",
     standardPricePerKg: 95,
     subsidizedPricePerKg: 47.5,
-    universityAdvisory: "महात्मा फुले कृषी विद्यापीठ (MPKV), राहुरी शिफारस २०२६",
+    universityAdvisoryEn: "Mahatma Phule Krishi Vidyapeeth (MPKV), Rahuri Advisory 2026",
+    universityAdvisoryMr: "महात्मा फुले कृषी विद्यापीठ (MPKV), राहुरी शिफारस २०२६",
     recommendedPracticesMr: [
       "पेरणीपूर्वी रायझोबियम व पीएसबी जिवाणू संवर्धकाची २५ ग्रॅम प्रति किलो प्रक्रिया करावी.",
       "३० सें.मी. अंतरावर पाभरीने पेरणी करावी, बियाणे खोली ३-४ सें.मी. ठेवावी.",
@@ -71,18 +81,23 @@ const CONTINGENCY_CROPS: ContingencyCrop[] = [
     id: "bajra",
     nameEn: "Pearl Millet (Bajra)",
     nameMr: "बाजरी",
-    variety: "श्रद्धा (Shraddha) / सबुरी (Saburi)",
-    durationDays: "७० - ८० दिवस (70-80 Days)",
-    rainfallNeedMm: "२०० - ३५० मिमी",
+    varietyEn: "Shraddha / Saburi",
+    varietyMr: "श्रद्धा / सबुरी",
+    durationDaysEn: "70 - 80 Days",
+    durationDaysMr: "७० - ८० दिवस",
+    rainfallNeedMmEn: "200 - 350 mm",
+    rainfallNeedMmMr: "२०० - ३५० मिमी",
     suitabilityConditionEn: "Moderate rainfall deficit; excellent tillering and grain filling under drought.",
     suitabilityConditionMr: "मध्यम दुष्काळात भरपूर फुटवे आणि दाणे भरणारी भरडधान्य जात.",
     mahabeejStockQtl: 680,
-    depotLocation: "Baramati APMC Seeds Hub, Pune",
+    depotLocationEn: "Baramati APMC Seeds Hub, Pune",
     depotLocationMr: "बारामती कृषी उत्पन्न बाजार समिती आगार, पुणे",
-    subsidyRate: "राष्ट्रीय अन्न सुरक्षा अभियान (NFSM) ४०% अनुदान",
+    subsidyRateEn: "National Food Security Mission (NFSM) 40% Subsidy",
+    subsidyRateMr: "राष्ट्रीय अन्न सुरक्षा अभियान (NFSM) ४०% अनुदान",
     standardPricePerKg: 120,
     subsidizedPricePerKg: 72,
-    universityAdvisory: "अखिल भारतीय समन्वित बाजरी संशोधन प्रकल्प, धुळे",
+    universityAdvisoryEn: "All India Coordinated Pearl Millet Project, Dhule (MPKV)",
+    universityAdvisoryMr: "अखिल भारतीय समन्वित बाजरी संशोधन प्रकल्प, धुळे",
     recommendedPracticesMr: [
       "पेरणी रुंद वरंबा-सरी (BBF) पद्धतीने ४५ × १२ सें.मी. अंतरावर करावी.",
       "पेरणीवेळी संपूर्ण नत्र व स्फुरद (५०:२५:० किलो/हेक्टर) खतमात्रा द्यावी.",
@@ -98,18 +113,23 @@ const CONTINGENCY_CROPS: ContingencyCrop[] = [
     id: "sesame",
     nameEn: "Sesame (Till)",
     nameMr: "तीळ",
-    variety: "फुले तीळ क्र. १ (Phule Till-1) / JLT-408",
-    durationDays: "७५ - ८५ दिवस (75-85 Days)",
-    rainfallNeedMm: "१५० - २२० मिमी",
+    varietyEn: "Phule Till-1 / JLT-408",
+    varietyMr: "फुले तीळ क्र. १ / JLT-408",
+    durationDaysEn: "75 - 85 Days",
+    durationDaysMr: "७५ - ८५ दिवस",
+    rainfallNeedMmEn: "150 - 220 mm",
+    rainfallNeedMmMr: "१५० - २२० मिमी",
     suitabilityConditionEn: "Post-monsoon residual moisture, well-drained light to medium soils.",
     suitabilityConditionMr: "परतीचा पाऊस कमी झाल्यास रब्बी हंगामात कमी पाण्यावर सर्वाधिक नफा देणारे नगदी पीक.",
     mahabeejStockQtl: 290,
-    depotLocation: "Solapur Zilla Parishad Central Depot",
+    depotLocationEn: "Solapur Zilla Parishad Central Seed Depot",
     depotLocationMr: "सोलापूर जिल्हा परिषद मध्यवर्ती बियाणे केंद्र",
-    subsidyRate: "तेलबिया मिशन ५०% थेट लाभ (DBT)",
+    subsidyRateEn: "National Oilseeds Mission 50% DBT Subsidy",
+    subsidyRateMr: "तेलबिया मिशन ५०% थेट लाभ (DBT)",
     standardPricePerKg: 210,
     subsidizedPricePerKg: 105,
-    universityAdvisory: "तेलबिया संशोधन केंद्र, जळगाव (MPKV)",
+    universityAdvisoryEn: "Oilseeds Research Station, Jalgaon (MPKV)",
+    universityAdvisoryMr: "तेलबिया संशोधन केंद्र, जळगाव (MPKV)",
     recommendedPracticesMr: [
       "बारीक बियाणे असल्याने २.५ किलो बियाण्यात ४ पट वाळू मिसळून समप्रमाणात पेरणी करावी.",
       "पेरणीनंतर १५ दिवसांनी पहिली विरळणी करून झाडांमधील अंतर १० सें.मी. ठेवावे.",
@@ -125,18 +145,23 @@ const CONTINGENCY_CROPS: ContingencyCrop[] = [
     id: "sunflower",
     nameEn: "Sunflower",
     nameMr: "सूर्यफूल",
-    variety: "मॉडर्न (Modern) / फुले भास्कर",
-    durationDays: "८० - ८५ दिवस (80-85 Days)",
-    rainfallNeedMm: "२५० - ३५० मिमी",
+    varietyEn: "Modern / Phule Bhaskar",
+    varietyMr: "मॉडर्न / फुले भास्कर",
+    durationDaysEn: "80 - 85 Days",
+    durationDaysMr: "८० - ८५ दिवस",
+    rainfallNeedMmEn: "250 - 350 mm",
+    rainfallNeedMmMr: "२५० - ३५० मिमी",
     suitabilityConditionEn: "Wide climate adaptability, deep taproot pulls moisture from subsoil.",
     suitabilityConditionMr: "खोल मुळांमुळे जमिनीतील ओलावा शोषून घेण्याची क्षमता, कोणत्याही हंगामात पेरणीयोग्य.",
     mahabeejStockQtl: 350,
-    depotLocation: "Dindori Agri Service Hub, Nashik",
+    depotLocationEn: "Dindori Agri Service Hub, Nashik",
     depotLocationMr: "दिंडोरी तालुका कृषी सेवा केंद्र, नाशिक",
-    subsidyRate: "राष्ट्रीय तेलबिया योजना ६०% अनुदान",
+    subsidyRateEn: "National Oilseeds Scheme 60% Subsidy",
+    subsidyRateMr: "राष्ट्रीय तेलबिया योजना ६०% अनुदान",
     standardPricePerKg: 180,
     subsidizedPricePerKg: 72,
-    universityAdvisory: "सूर्यफूल संशोधन केंद्र, लातूर (VNMKV)",
+    universityAdvisoryEn: "Sunflower Research Station, Latur (VNMKV)",
+    universityAdvisoryMr: "सूर्यफूल संशोधन केंद्र, लातूर (VNMKV)",
     recommendedPracticesMr: [
       "पेरणीपूर्वी इमिडाक्लोप्रिड ५ ग्रॅम प्रति किलो बियाण्यावर प्रक्रिया करावी (मावा प्रतिबंध).",
       "फुलोऱ्याच्या वेळी मधमाश्यांच्या परागीभवनासाठी सकाळी हलक्या हाताने फुलांवरून हात फिरवावा.",
@@ -156,8 +181,8 @@ interface Props {
 }
 
 export default function ContingencyCropPlanner({
-  selectedTaluka = "Niphad (निफाड)",
-  selectedDistrict = "Nashik (नाशिक)",
+  selectedTaluka = "Niphad",
+  selectedDistrict = "Nashik",
 }: Props) {
   const { language } = useTranslation();
   const isMr = language === "mr";
@@ -188,8 +213,8 @@ export default function ContingencyCropPlanner({
         blockName: selectedTaluka.split(" ")[0].replace(/[^a-zA-Z]/g, ""),
         districtName: selectedDistrict.split(" ")[0].replace(/[^a-zA-Z]/g, ""),
         message: isMr
-          ? `[अधिकृत आपत्कालीन पीक योजना] ${selectedTaluka} तालुक्यात पावसाच्या खंडामुळे कृषी विभागाने ${selectedCrop.nameMr} (${selectedCrop.variety}) चे महाबीज प्रमाणित बियाणे ${selectedCrop.subsidyRate} वर ${selectedCrop.depotLocationMr} येथे उपलब्ध केले आहे.`
-          : `[Official Contingency Plan] Due to dry spell in ${selectedTaluka}, Agriculture Dept has released subsidized ${selectedCrop.nameEn} (${selectedCrop.variety}) at ${selectedCrop.depotLocation}.`,
+          ? `[अधिकृत आपत्कालीन पीक योजना] ${selectedTaluka} तालुक्यात पावसाच्या खंडामुळे कृषी विभागाने ${selectedCrop.nameMr} (${selectedCrop.varietyMr}) चे महाबीज प्रमाणित बियाणे ${selectedCrop.subsidyRateMr} वर ${selectedCrop.depotLocationMr} येथे उपलब्ध केले आहे.`
+          : `[Official Contingency Plan] Due to dry spell in ${selectedTaluka}, Agriculture Dept has released subsidized ${selectedCrop.nameEn} (${selectedCrop.varietyEn}) at ${selectedCrop.depotLocationEn}.`,
         timestamp: new Date().toLocaleTimeString(isMr ? "mr-IN" : "en-IN", {
           hour: "2-digit",
           minute: "2-digit",
@@ -295,7 +320,7 @@ export default function ContingencyCropPlanner({
                         {isMr ? crop.nameMr : crop.nameEn}
                       </span>
                       <span className="rounded bg-[#123C32]/10 px-1.5 py-0.5 font-mono text-[10px] font-bold text-[#123C32]">
-                        {crop.variety}
+                        {isMr ? crop.varietyMr : crop.varietyEn}
                       </span>
                     </div>
                     <p className="font-sans text-xs text-[#252923]/80">
@@ -304,10 +329,10 @@ export default function ContingencyCropPlanner({
                   </div>
                   <div className="text-right shrink-0">
                     <span className="block font-mono text-xs font-black text-[#3B8B61]">
-                      {crop.durationDays}
+                      {isMr ? crop.durationDaysMr : crop.durationDaysEn}
                     </span>
                     <span className="font-mono text-[10px] text-[#252923]/60">
-                      {crop.rainfallNeedMm}
+                      {isMr ? crop.rainfallNeedMmMr : crop.rainfallNeedMmEn}
                     </span>
                   </div>
                 </div>
@@ -340,13 +365,13 @@ export default function ContingencyCropPlanner({
                   {isMr ? "विद्यापीठ प्रमाणित शिफारस" : "University Certified Specification"}
                 </span>
                 <span className="font-mono text-xs font-semibold text-[#123C32]">
-                  {selectedCrop.universityAdvisory}
+                  {isMr ? selectedCrop.universityAdvisoryMr : selectedCrop.universityAdvisoryEn}
                 </span>
               </div>
               <h3 className="mt-1 font-display text-2xl font-black text-[#123C32]">
                 {isMr ? selectedCrop.nameMr : selectedCrop.nameEn}{" "}
                 <span className="text-lg font-normal text-[#252923]/70">
-                  ({selectedCrop.variety})
+                  ({isMr ? selectedCrop.varietyMr : selectedCrop.varietyEn})
                 </span>
               </h3>
             </div>
@@ -360,7 +385,7 @@ export default function ContingencyCropPlanner({
                 <span className="text-xs font-normal text-[#252923]">/ kg</span>
               </p>
               <span className="font-mono text-[10px] font-bold text-[#172B4D]">
-                {selectedCrop.subsidyRate}
+                {isMr ? selectedCrop.subsidyRateMr : selectedCrop.subsidyRateEn}
               </span>
             </div>
           </div>
@@ -372,7 +397,7 @@ export default function ContingencyCropPlanner({
                 {isMr ? "पक्वता कालावधी" : "Crop Duration"}
               </span>
               <p className="mt-0.5 font-mono text-sm font-black text-[#123C32]">
-                {selectedCrop.durationDays}
+                {isMr ? selectedCrop.durationDaysMr : selectedCrop.durationDaysEn}
               </p>
             </div>
             <div className="rounded-lg border-2 border-[#123C32]/20 bg-[#F4F0E5] p-3 text-center">
@@ -380,7 +405,7 @@ export default function ContingencyCropPlanner({
                 {isMr ? "आवश्यक पर्जन्यमान" : "Moisture Threshold"}
               </span>
               <p className="mt-0.5 font-mono text-sm font-black text-[#123C32]">
-                {selectedCrop.rainfallNeedMm}
+                {isMr ? selectedCrop.rainfallNeedMmMr : selectedCrop.rainfallNeedMmEn}
               </p>
             </div>
             <div className="rounded-lg border-2 border-[#123C32]/20 bg-[#F4F0E5] p-3 text-center">
@@ -428,7 +453,7 @@ export default function ContingencyCropPlanner({
                 </span>
               </div>
               <span className="font-mono text-xs font-semibold text-[#172B4D]">
-                {isMr ? selectedCrop.depotLocationMr : selectedCrop.depotLocation}
+                {isMr ? selectedCrop.depotLocationMr : selectedCrop.depotLocationEn}
               </span>
             </div>
 
@@ -448,8 +473,8 @@ export default function ContingencyCropPlanner({
                 </p>
                 <p className="font-sans text-[11px] text-[#252923]/80">
                   {isMr
-                    ? `५०% अनुदान सवलतीत ${selectedCrop.nameMr} (${selectedCrop.variety}) चे ${selectedCrop.mahabeejStockQtl} क्विंटल बियाणे निफाड व परिसरातील शेतकऱ्यांसाठी राखीव करण्यात आले आहे.`
-                    : `${selectedCrop.mahabeejStockQtl} Quintals of ${selectedCrop.nameEn} (${selectedCrop.variety}) allocated to designated depot under NFSM 50% subsidy window.`}
+                    ? `५०% अनुदान सवलतीत ${selectedCrop.nameMr} (${selectedCrop.varietyMr}) चे ${selectedCrop.mahabeejStockQtl} क्विंटल बियाणे निफाड व परिसरातील शेतकऱ्यांसाठी राखीव करण्यात आले आहे.`
+                    : `${selectedCrop.mahabeejStockQtl} Quintals of ${selectedCrop.nameEn} (${selectedCrop.varietyEn}) allocated to designated depot under NFSM 50% subsidy window.`}
                 </p>
               </div>
             ) : (

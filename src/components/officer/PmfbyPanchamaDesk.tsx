@@ -35,11 +35,14 @@ export interface PmfbyClaimItem {
   consecutiveDryDays: number;
   peakRainMm: number;
   soilMoisturePct: number;
-  filingDate: string;
+  filingDateEn: string;
+  filingDateMr: string;
   status: "pending" | "approved" | "field_inspection" | "rejected";
-  approvedBy?: string;
+  approvedByEn?: string;
+  approvedByMr?: string;
   approvalCode?: string;
-  approvalDate?: string;
+  approvalDateEn?: string;
+  approvalDateMr?: string;
 }
 
 const INITIAL_CLAIMS: PmfbyClaimItem[] = [
@@ -60,7 +63,8 @@ const INITIAL_CLAIMS: PmfbyClaimItem[] = [
     consecutiveDryDays: 14,
     peakRainMm: 0.0,
     soilMoisturePct: 30.7,
-    filingDate: "7 नोव्हेंबर २०२६",
+    filingDateEn: "07 Nov 2026",
+    filingDateMr: "७ नोव्हेंबर २०२६",
     status: "pending",
   },
   {
@@ -80,7 +84,8 @@ const INITIAL_CLAIMS: PmfbyClaimItem[] = [
     consecutiveDryDays: 16,
     peakRainMm: 1.2,
     soilMoisturePct: 24.1,
-    filingDate: "6 नोव्हेंबर २०२६",
+    filingDateEn: "06 Nov 2026",
+    filingDateMr: "६ नोव्हेंबर २०२६",
     status: "pending",
   },
   {
@@ -100,11 +105,14 @@ const INITIAL_CLAIMS: PmfbyClaimItem[] = [
     consecutiveDryDays: 15,
     peakRainMm: 0.0,
     soilMoisturePct: 28.5,
-    filingDate: "5 नोव्हेंबर २०२६",
+    filingDateEn: "05 Nov 2026",
+    filingDateMr: "५ नोव्हेंबर २०२६",
     status: "approved",
-    approvedBy: "दिलीप पाटील, तालुका कृषी अधिकारी (निफाड/नाशिक)",
+    approvedByEn: "Dilip Patil, Taluka Agriculture Officer (Niphad)",
+    approvedByMr: "दिलीप पाटील, तालुका कृषी अधिकारी (निफाड/नाशिक)",
     approvalCode: "MH-AGRI-PAN-2026-IGAT-091",
-    approvalDate: "7 नोव्हेंबर २०२६",
+    approvalDateEn: "07 Nov 2026",
+    approvalDateMr: "७ नोव्हेंबर २०२६",
   },
   {
     claimId: "MH-PMFBY-2026-71042",
@@ -123,11 +131,14 @@ const INITIAL_CLAIMS: PmfbyClaimItem[] = [
     consecutiveDryDays: 12,
     peakRainMm: 4.5,
     soilMoisturePct: 34.0,
-    filingDate: "4 नोव्हेंबर २०२६",
+    filingDateEn: "04 Nov 2026",
+    filingDateMr: "४ नोव्हेंबर २०२६",
     status: "field_inspection",
-    approvedBy: "संजय देशमुख, मंडळ कृषी अधिकारी",
+    approvedByEn: "Sanjay Deshmukh, Circle Agriculture Officer",
+    approvedByMr: "संजय देशमुख, मंडळ कृषी अधिकारी",
     approvalCode: "MH-AGRI-INSP-2026-SHAH-014",
-    approvalDate: "6 नोव्हेंबर २०२६",
+    approvalDateEn: "06 Nov 2026",
+    approvalDateMr: "६ नोव्हेंबर २०२६",
   },
 ];
 
@@ -161,31 +172,58 @@ export default function PmfbyPanchamaDesk({
   const [actionSuccessMsg, setActionSuccessMsg] = useState<string | null>(null);
 
   // Sync to localStorage so changes reflect across farmer portal
-  const persistClaims = (updated: PmfbyClaimItem[]) => {
-    setClaims(updated);
+  const persistClaims = (newClaims: PmfbyClaimItem[]) => {
+    setClaims(newClaims);
     if (typeof window !== "undefined") {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-      } catch {}
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(newClaims));
+      window.dispatchEvent(new Event("varshamitra:pmfby-updated"));
     }
   };
+
+  // Listen for storage events (e.g. if farmer submitted claim)
+  useEffect(() => {
+    const handleStorageChange = () => {
+      try {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) {
+          setClaims(JSON.parse(stored));
+        }
+      } catch {}
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    window.addEventListener("varshamitra:pmfby-updated", handleStorageChange);
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("varshamitra:pmfby-updated", handleStorageChange);
+    };
+  }, []);
 
   const selectedClaim = claims.find((c) => c.claimId === selectedClaimId) || claims[0];
 
   const handleApproveClaim = (claimId: string) => {
     const approvalCode = `MH-AGRI-PAN-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+    const nowEn = new Date().toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+    const nowMr = new Date().toLocaleDateString("mr-IN", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+
     const updated = claims.map((c) => {
       if (c.claimId === claimId) {
         return {
           ...c,
           status: "approved" as const,
-          approvedBy: "दिलीप पाटील, तालुका कृषी अधिकारी (निफाड / नाशिक)",
+          approvedByEn: "Dilip Patil, Taluka Agriculture Officer (TAO), Niphad",
+          approvedByMr: "दिलीप पाटील, तालुका कृषी अधिकारी (निफाड / नाशिक)",
           approvalCode,
-          approvalDate: new Date().toLocaleDateString(isMr ? "mr-IN" : "en-IN", {
-            day: "numeric",
-            month: "long",
-            year: "numeric",
-          }),
+          approvalDateEn: nowEn,
+          approvalDateMr: nowMr,
         };
       }
       return c;
@@ -202,18 +240,27 @@ export default function PmfbyPanchamaDesk({
 
   const handleOrderFieldInspection = (claimId: string) => {
     const inspectionCode = `MH-INSP-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+    const nowEn = new Date().toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+    const nowMr = new Date().toLocaleDateString("mr-IN", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+
     const updated = claims.map((c) => {
       if (c.claimId === claimId) {
         return {
           ...c,
           status: "field_inspection" as const,
-          approvedBy: "मंडळ अधिकारी व तलाठी संयुक्त पथक",
+          approvedByEn: "Joint Committee of Circle Officer & Talathi",
+          approvedByMr: "मंडळ अधिकारी व तलाठी संयुक्त पथक",
           approvalCode: inspectionCode,
-          approvalDate: new Date().toLocaleDateString(isMr ? "mr-IN" : "en-IN", {
-            day: "numeric",
-            month: "long",
-            year: "numeric",
-          }),
+          approvalDateEn: nowEn,
+          approvalDateMr: nowMr,
         };
       }
       return c;
@@ -233,125 +280,120 @@ export default function PmfbyPanchamaDesk({
     const matchesSearch =
       c.farmerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       c.gatNo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      c.claimId.toLowerCase().includes(searchTerm.toLowerCase()) ||
       c.taluka.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.claimId.toLowerCase().includes(searchTerm.toLowerCase());
+      c.talukaMr.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesFilter && matchesSearch;
   });
 
   return (
     <div className="space-y-6">
-      
-      {/* ── Top Header Banner ── */}
-      <div className="rounded-xl border-2 border-[#123C32] bg-[#123C32] p-5 text-[#F4F0E5] shadow-[4px_4px_0px_#252923]">
-        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#F4F0E5]/20 pb-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#E6A52E] text-[#123C32]">
-              <ShieldCheck size={22} />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="rounded bg-[#E6A52E]/20 px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wider text-[#E6A52E]">
-                  PMFBY Operational Guidelines Rev. 2024
-                </span>
-                <span className="font-mono text-xs text-[#F4F0E5]/70">
-                  {isMr ? "महाराष्ट्र शासन कृषी विभाग" : "Dept of Agriculture, Govt of Maharashtra"}
-                </span>
-              </div>
-              <h2 className="font-display text-xl font-bold tracking-tight text-white sm:text-2xl mt-0.5">
-                {isMr
-                  ? "प्रधानमंत्री पीक विमा (PMFBY) पंचनामा व पडताळणी कक्ष"
-                  : "PMFBY Hyperlocal Loss Verification & Panchama Desk"}
-              </h2>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="rounded-lg border border-[#F4F0E5]/30 bg-white/10 px-3 py-1.5 text-center font-mono">
-              <span className="block text-[10px] uppercase text-[#F4F0E5]/60">{isMr ? "एकूण दावे" : "Total Claims"}</span>
-              <strong className="text-sm font-bold text-white">{claims.length}</strong>
-            </div>
-            <div className="rounded-lg border border-[#E6A52E]/50 bg-[#E6A52E]/15 px-3 py-1.5 text-center font-mono">
-              <span className="block text-[10px] uppercase text-[#E6A52E]">{isMr ? "प्रलंबित" : "Pending"}</span>
-              <strong className="text-sm font-bold text-[#E6A52E]">
-                {claims.filter((c) => c.status === "pending").length}
-              </strong>
-            </div>
-            <div className="rounded-lg border border-[#3B8B61]/50 bg-[#3B8B61]/20 px-3 py-1.5 text-center font-mono">
-              <span className="block text-[10px] uppercase text-[#86EFAC]">{isMr ? "मंजूर" : "Approved"}</span>
-              <strong className="text-sm font-bold text-[#86EFAC]">
-                {claims.filter((c) => c.status === "approved").length}
-              </strong>
-            </div>
-          </div>
-        </div>
-
-        <p className="mt-3 font-sans text-xs text-[#F4F0E5]/80 leading-relaxed">
-          {isMr
-            ? "शेतकऱ्यांनी वर्षा मित्र ॲपवरून सादर केलेल्या ७२-तास आपत्ती दाव्यांची Copernicus ERA5 व स्वयंचलित हवामान केंद्राद्वारे (AWS) पडताळणी करून कृषी अधिकाऱ्यांना डिजिटल मंजुरी देण्याचे अधिकृत केंद्र."
-            : "Review and approve 72-hour formal crop damage claims filed by farmers. Cross-verified with Copernicus ERA5-Land satellite reanalysis and IMD automated weather station networks."}
-        </p>
-      </div>
-
+      {/* Success Notification Alert */}
       {actionSuccessMsg && (
-        <div className="rounded-lg border-2 border-[#3B8B61] bg-[#3B8B61]/15 p-4 font-mono text-xs font-bold text-[#1F5336] shadow-sm flex items-center gap-2">
-          <CheckCircle2 size={16} className="text-[#3B8B61]" />
+        <div className="flex items-center gap-2 rounded-xl border-2 border-[#3B8B61] bg-[#3B8B61]/15 p-4 font-mono text-xs font-bold text-[#1F5336] shadow-sm animate-fade-in">
+          <CheckCircle2 size={18} className="text-[#3B8B61] shrink-0" />
           <span>{actionSuccessMsg}</span>
         </div>
       )}
 
-      {/* ── 2-Column Claims Management ── */}
+      {/* Desk Header Banner */}
+      <div className="rounded-xl border-3 border-[#172B4D] bg-[#172B4D] p-5 text-white shadow-[4px_4px_0px_#123C32]">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-[#E6A52E] px-2.5 py-0.5 font-mono text-[11px] font-bold uppercase tracking-wider text-[#172B4D]">
+                <ShieldCheck size={13} />
+                {isMr ? "महाराष्ट्र शासन कृषी विभाग" : "Dept of Agriculture, Govt of Maharashtra"}
+              </span>
+              <span className="font-mono text-xs text-white/80">
+                PMFBY Rev. Guidelines 2024
+              </span>
+            </div>
+            <h2 className="font-display text-xl font-bold tracking-tight text-white sm:text-2xl">
+              {isMr
+                ? "प्रधानमंत्री पीक विमा (PMFBY) पंचनामा व पडताळणी कक्ष"
+                : "PMFBY Crop Loss Verification & Digital Panchanama Desk"}
+            </h2>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="rounded-lg bg-white/10 px-3 py-2 text-right font-mono">
+              <span className="block text-[10px] uppercase text-[#F4F0E5]/60">{isMr ? "एकूण दावे" : "Total Claims"}</span>
+              <span className="text-base font-bold text-white">{claims.length}</span>
+            </div>
+            <div className="rounded-lg bg-white/10 px-3 py-2 text-right font-mono">
+              <span className="block text-[10px] uppercase text-[#E6A52E]">{isMr ? "प्रलंबित" : "Pending"}</span>
+              <span className="text-base font-bold text-[#E6A52E]">
+                {claims.filter((c) => c.status === "pending").length}
+              </span>
+            </div>
+            <div className="rounded-lg bg-white/10 px-3 py-2 text-right font-mono">
+              <span className="block text-[10px] uppercase text-[#86EFAC]">{isMr ? "मंजूर" : "Approved"}</span>
+              <span className="text-base font-bold text-[#86EFAC]">
+                {claims.filter((c) => c.status === "approved").length}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <p className="mt-3 font-sans text-xs text-white/80 max-w-3xl leading-relaxed">
+          {isMr
+            ? "शेतकऱ्यांनी वर्षा मित्र ॲपवरून सादर केलेल्या ७२-तास आपत्ती दाव्यांची Copernicus ERA5 व स्वयंचलित हवामान केंद्राद्वारे (AWS) पडताळणी करून कृषी अधिकाऱ्यांना डिजिटल मंजुरी देण्याचे अधिकृत केंद्र."
+            : "Official desk allowing Taluka Agriculture Officers to cross-verify 72-hour farmer crop-loss intimations against Copernicus ERA5 & IMD AWS telemetry, and issue digital panchanama certificates."}
+        </p>
+      </div>
+
+      {/* Main 2-Col Desk Grid */}
       <div className="grid gap-6 lg:grid-cols-12 items-start">
         
         {/* Left Column: Claims Queue (5 cols) */}
         <div className="lg:col-span-5 rounded-xl border-2 border-[#123C32] bg-white shadow-[4px_4px_0px_#123C32] overflow-hidden">
-          <div className="border-b-2 border-[#123C32]/15 bg-[#F4F0E5] p-3.5 space-y-2.5">
-            <div className="flex items-center justify-between">
-              <span className="font-mono text-xs font-bold uppercase tracking-wider text-[#123C32]">
-                {isMr ? "दावा सूची (Claims Queue)" : "Incoming Claims Queue"}
-              </span>
-              <span className="rounded bg-white px-2 py-0.5 font-mono text-[10px] font-bold text-[#123C32] border border-[#123C32]/20">
-                {filteredClaims.length} {isMr ? "नोंदी" : "records"}
-              </span>
-            </div>
+          <div className="flex items-center justify-between border-b-2 border-[#123C32]/15 bg-[#F4F0E5] px-4 py-3">
+            <span className="font-mono text-xs font-bold uppercase tracking-wider text-[#123C32]">
+              {isMr ? "दावा सूची" : "Incoming Claims Queue"}
+            </span>
+            <span className="font-mono text-xs text-[#252923]/60">
+              {filteredClaims.length} {isMr ? "नोंदी" : "records"}
+            </span>
+          </div>
 
-            {/* Search Input */}
+          {/* Filter & Search Bar */}
+          <div className="p-3 border-b border-[#123C32]/10 space-y-2 bg-[#F4F0E5]/40">
             <div className="relative">
-              <Search size={13} className="absolute left-2.5 top-2.5 text-[#252923]/50" />
+              <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#252923]/50" />
               <input
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder={isMr ? "शेतकरी, गट क्र., तालुका शोधा..." : "Search farmer, gat no, taluka..."}
-                className="w-full rounded-md border border-[#123C32]/30 bg-white pl-8 pr-3 py-1.5 font-sans text-xs outline-none focus:border-[#123C32]"
+                className="w-full rounded-md border border-[#123C32]/30 bg-white pl-8 pr-3 py-1.5 font-mono text-xs text-[#252923] outline-none focus:border-[#123C32]"
               />
             </div>
 
-            {/* Filter Tabs */}
-            <div className="flex flex-wrap gap-1 font-mono text-[10px]">
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-[11px] font-mono">
               {[
                 { id: "all", en: "All", mr: "सर्व" },
                 { id: "pending", en: "Pending", mr: "प्रलंबित" },
                 { id: "approved", en: "Approved", mr: "मंजूर" },
                 { id: "field_inspection", en: "Spot Inspection", mr: "पंचनामा" },
-              ].map((f) => (
+              ].map((tab) => (
                 <button
-                  key={f.id}
-                  type="button"
-                  onClick={() => setFilterStatus(f.id)}
-                  className={`rounded px-2 py-0.5 font-bold transition ${
-                    filterStatus === f.id
+                  key={tab.id}
+                  onClick={() => setFilterStatus(tab.id)}
+                  className={`px-2.5 py-1 rounded-md font-bold transition shrink-0 ${
+                    filterStatus === tab.id
                       ? "bg-[#123C32] text-white"
-                      : "bg-white text-[#252923] hover:bg-[#123C32]/10"
+                      : "bg-white border border-[#123C32]/20 text-[#252923] hover:bg-[#F4F0E5]"
                   }`}
                 >
-                  {isMr ? f.mr : f.en}
+                  {isMr ? tab.mr : tab.en}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* List of Claims */}
-          <div className="max-h-[580px] overflow-y-auto divide-y divide-[#123C32]/10">
+          {/* Claim items list */}
+          <div className="max-h-[560px] overflow-y-auto divide-y divide-[#123C32]/10">
             {filteredClaims.map((claim) => {
               const isSelected = claim.claimId === selectedClaimId;
               return (
@@ -360,21 +402,21 @@ export default function PmfbyPanchamaDesk({
                   onClick={() => setSelectedClaimId(claim.claimId)}
                   className={`p-3.5 cursor-pointer transition ${
                     isSelected
-                      ? "bg-[#123C32]/10 border-l-4 border-[#123C32]"
-                      : "hover:bg-[#F4F0E5]/60"
+                      ? "bg-[#123C32]/10 border-l-4 border-l-[#123C32]"
+                      : "hover:bg-[#F4F0E5]"
                   }`}
                 >
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-start justify-between gap-2">
                     <span className="font-mono text-[10px] font-bold text-[#123C32]">
                       {claim.claimId}
                     </span>
                     <span
-                      className={`rounded px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase ${
+                      className={`rounded px-1.5 py-0.5 font-mono text-[10px] font-bold uppercase ${
                         claim.status === "approved"
-                          ? "bg-[#3B8B61]/15 text-[#3B8B61] border border-[#3B8B61]"
+                          ? "bg-[#3B8B61]/20 text-[#1F5336]"
                           : claim.status === "field_inspection"
-                          ? "bg-[#2878A5]/15 text-[#2878A5] border border-[#2878A5]"
-                          : "bg-[#E6A52E]/20 text-[#8F4C13] border border-[#E6A52E]"
+                          ? "bg-[#2878A5]/20 text-[#1E4E6D]"
+                          : "bg-[#E6A52E]/25 text-[#8F4C13]"
                       }`}
                     >
                       {claim.status === "approved"
@@ -388,7 +430,7 @@ export default function PmfbyPanchamaDesk({
                   <p className="mt-1 font-display text-sm font-bold text-[#252923]">
                     {claim.farmerName}{" "}
                     <span className="font-mono text-xs font-normal text-[#252923]/70">
-                      (गट क्र. {claim.gatNo})
+                      ({isMr ? "गट क्र." : "Gat No."} {claim.gatNo})
                     </span>
                   </p>
 
@@ -422,7 +464,9 @@ export default function PmfbyPanchamaDesk({
                   {selectedClaim.farmerName}
                 </h3>
                 <p className="font-mono text-xs text-[#252923]/70 mt-0.5">
-                  {isMr ? `७/१२ गट क्र.: ${selectedClaim.gatNo} · तालुका ${selectedClaim.talukaMr}, जिल्हा ${selectedClaim.district}` : `7/12 Gat No: ${selectedClaim.gatNo} · Taluka ${selectedClaim.taluka}, District ${selectedClaim.district}`}
+                  {isMr
+                    ? `७/१२ गट क्र.: ${selectedClaim.gatNo} · तालुका ${selectedClaim.talukaMr}, जिल्हा ${selectedClaim.district}`
+                    : `7/12 Gat No: ${selectedClaim.gatNo} · Taluka ${selectedClaim.taluka}, District ${selectedClaim.district}`}
                 </p>
               </div>
 
@@ -431,7 +475,8 @@ export default function PmfbyPanchamaDesk({
                   {selectedClaim.claimId}
                 </span>
                 <p className="font-mono text-[10px] text-[#252923]/60">
-                  {isMr ? "दाखल दिनांक: " : "Filed: "}{selectedClaim.filingDate}
+                  {isMr ? "दाखल दिनांक: " : "Filed: "}
+                  {isMr ? selectedClaim.filingDateMr : selectedClaim.filingDateEn}
                 </p>
               </div>
             </div>
@@ -457,7 +502,7 @@ export default function PmfbyPanchamaDesk({
               <div className="flex items-center justify-between border-b border-[#123C32]/15 pb-2">
                 <div className="flex items-center gap-1.5 font-mono text-xs font-bold text-[#123C32]">
                   <Award size={14} className="text-[#E6A52E]" />
-                  <span>{isMr ? "वस्तुनिष्ठ कृषी-हवामान पुरावा नोंदवही (Evidence Ledger)" : "Objective Weather Evidence Ledger"}</span>
+                  <span>{isMr ? "वस्तुनिष्ठ कृषी-हवामान पुरावा नोंदवही" : "Objective Weather Evidence Ledger"}</span>
                 </div>
                 <span className="rounded bg-[#3B8B61]/15 px-2 py-0.5 font-mono text-[9px] font-bold text-[#1F5336] border border-[#3B8B61]/30">
                   Copernicus ERA5 Verified
@@ -468,21 +513,24 @@ export default function PmfbyPanchamaDesk({
                 <div className="flex items-center justify-between p-2 rounded bg-white border border-[#123C32]/10">
                   <span>{isMr ? "१. सलग पावसाचा खंड (Dry Spell):" : "1. Rainfall Deficit Streak:"}</span>
                   <strong className="text-[#C7473B]">
-                    {selectedClaim.consecutiveDryDays} {isMr ? "दिवस" : "days"} (PMFBY निकष: &ge; १४ दिवस)
+                    {selectedClaim.consecutiveDryDays} {isMr ? "दिवस" : "days"}{" "}
+                    ({isMr ? "PMFBY निकष: ≥ १४ दिवस" : "PMFBY Threshold: ≥ 14 days"})
                   </strong>
                 </div>
 
                 <div className="flex items-center justify-between p-2 rounded bg-white border border-[#123C32]/10">
                   <span>{isMr ? "२. २४ तास कमाल पाऊस (Peak Precip):" : "2. Peak 24h Rainfall:"}</span>
                   <strong className="text-[#123C32]">
-                    {selectedClaim.peakRainMm} mm (अतिवृष्टी मर्यादा: &ge; ६४.५ mm)
+                    {selectedClaim.peakRainMm} mm{" "}
+                    ({isMr ? "अतिवृष्टी मर्यादा: ≥ ६४.५ mm" : "Heavy Rain Threshold: ≥ 64.5 mm"})
                   </strong>
                 </div>
 
                 <div className="flex items-center justify-between p-2 rounded bg-white border border-[#123C32]/10">
                   <span>{isMr ? "३. उपग्रह मृदा ओलावा निर्देशांक (Vapsa):" : "3. Soil Moisture Index (0-7 cm):"}</span>
                   <strong className="text-[#2878A5]">
-                    {selectedClaim.soilMoisturePct}% Volumetric (वाफसा मर्यादा तळाला)
+                    {selectedClaim.soilMoisturePct}% Volumetric{" "}
+                    ({isMr ? "वाफसा मर्यादा तळाला" : "Below Vapsa Wilting Point"})
                   </strong>
                 </div>
               </div>
@@ -502,13 +550,15 @@ export default function PmfbyPanchamaDesk({
                   <span>{isMr ? "अधिकृत शासकीय नुकसान दाखला मंजूर" : "Officially Approved Government Loss Certificate"}</span>
                 </div>
                 <p className="text-[#252923]">
-                  {isMr ? "मंजूर करणारे अधिकारी: " : "Approved By: "}<strong>{selectedClaim.approvedBy}</strong>
+                  {isMr ? "मंजूर करणारे अधिकारी: " : "Approved By: "}
+                  <strong>{isMr ? selectedClaim.approvedByMr : selectedClaim.approvedByEn}</strong>
                 </p>
                 <p className="text-[#252923]">
                   {isMr ? "आदेश संदर्भ क्रमांक: " : "Govt Order Ref: "}<strong>{selectedClaim.approvalCode}</strong>
                 </p>
                 <p className="text-[#252923]/60 text-[10px]">
-                  {isMr ? "मंजुरी दिनांक: " : "Date of Approval: "}{selectedClaim.approvalDate}
+                  {isMr ? "मंजुरी दिनांक: " : "Date of Approval: "}
+                  {isMr ? selectedClaim.approvalDateMr : selectedClaim.approvalDateEn}
                 </p>
               </div>
             )}
@@ -520,7 +570,8 @@ export default function PmfbyPanchamaDesk({
                   <span>{isMr ? "प्रत्यक्ष शेत पंचनामा आदेश जारी" : "Field Spot Inspection Scheduled"}</span>
                 </div>
                 <p className="text-[#252923]">
-                  {isMr ? "नेमलेले पथक: " : "Assigned Team: "}<strong>{selectedClaim.approvedBy}</strong>
+                  {isMr ? "नेमलेले पथक: " : "Assigned Team: "}
+                  <strong>{isMr ? selectedClaim.approvedByMr : selectedClaim.approvedByEn}</strong>
                 </p>
                 <p className="text-[#252923]">
                   {isMr ? "आदेश क्रमांक: " : "Order Ref: "}<strong>{selectedClaim.approvalCode}</strong>
@@ -538,7 +589,7 @@ export default function PmfbyPanchamaDesk({
                     className="flex items-center gap-2 rounded-lg border-2 border-[#3B8B61] bg-[#3B8B61] px-4 py-2.5 font-mono text-xs font-bold uppercase tracking-wider text-white shadow-[2px_2px_0px_#123C32] hover:bg-[#2e6d4c] transition active:scale-95"
                   >
                     <CheckCircle2 size={15} />
-                    <span>{isMr ? "दाखला मंजूर करा (Approve Certificate)" : "Approve Certificate"}</span>
+                    <span>{isMr ? "दाखला मंजूर करा" : "Approve Certificate"}</span>
                   </button>
                 )}
 

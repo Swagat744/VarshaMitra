@@ -54,10 +54,10 @@ export default function EmergencyKisanSupportCard({
           <div>
             <div className="flex items-center justify-between">
               <span className="font-mono text-[10px] font-bold uppercase text-[#C7473B]">
-                PMFBY पीक विमा
+                {isMr ? "PMFBY पीक विमा" : "PMFBY Crop Insurance"}
               </span>
               <span className="rounded bg-[#C7473B] px-1.5 py-0.2 font-mono text-[9px] font-bold text-white">
-                ७२ तास मर्यादा
+                {isMr ? "७२ तास मर्यादा" : "72-Hr Deadline"}
               </span>
             </div>
             <a
@@ -85,10 +85,10 @@ export default function EmergencyKisanSupportCard({
           <div>
             <div className="flex items-center justify-between">
               <span className="font-mono text-[10px] font-bold uppercase text-[#123C32]">
-                किसान कॉल सेंटर (KCC)
+                {isMr ? "किसान कॉल सेंटर (KCC)" : "Kisan Call Center (KCC)"}
               </span>
               <span className="rounded bg-[#123C32] px-1.5 py-0.2 font-mono text-[9px] font-bold text-white">
-                मराठी भाषा
+                {isMr ? "मराठी भाषा" : "Toll-Free"}
               </span>
             </div>
             <a
@@ -100,7 +100,7 @@ export default function EmergencyKisanSupportCard({
             <p className="mt-1 font-sans text-xs text-[#252923]/80 leading-relaxed">
               {isMr
                 ? "कृषी तज्ज्ञांशी थेट मराठी भाषेत मोफत संवाद साधा (सकाळी ६:०० ते रात्री १०:००)."
-                : "Free consultation with agriculture scientists in Marathi (6:00 AM – 10:00 PM)."}
+                : "Free consultation with agriculture scientists in English/Marathi (6:00 AM – 10:00 PM)."}
             </p>
           </div>
           <a
@@ -116,10 +116,10 @@ export default function EmergencyKisanSupportCard({
           <div>
             <div className="flex items-center justify-between">
               <span className="font-mono text-[10px] font-bold uppercase text-[#2878A5]">
-                तालुका कृषी अधिकारी
+                {isMr ? "तालुका कृषी अधिकारी" : "Taluka Agri Officer"}
               </span>
               <span className="font-mono text-[9px] text-[#252923]/60">
-                शासकीय डेस्क
+                {isMr ? "शासकीय डेस्क" : "Govt Desk"}
               </span>
             </div>
             <h4 className="mt-2 font-display text-base font-bold text-[#172B4D]">
