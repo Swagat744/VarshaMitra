@@ -94,7 +94,30 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
   const setRole = useCallback((role: UserRole | null) => persist({ ...state, role }), [state, persist]);
   const setLocation = useCallback(
     (location: SelectedLocation) => {
-      persist({ ...state, location });
+      // Sync farmer profile's district and taluka if profile exists
+      let updatedProfile = state.farmerProfile;
+      if (updatedProfile) {
+        const isSameDistrict =
+          !updatedProfile.districtName ||
+          updatedProfile.districtName.toLowerCase().trim() === location.districtName.toLowerCase().trim();
+        const isSameTaluka =
+          !updatedProfile.talukaName ||
+          updatedProfile.talukaName.toLowerCase().trim() === location.blockName.toLowerCase().trim() ||
+          updatedProfile.talukaName.toLowerCase().trim() === (location.taluka || "").toLowerCase().trim();
+
+        updatedProfile = {
+          ...updatedProfile,
+          districtName: location.districtName,
+          districtNameMr: location.districtNameMr,
+          talukaName: location.taluka || location.blockName,
+          talukaNameMr: location.blockNameMr,
+          // Clear stale village if district or taluka changed
+          villageName: isSameDistrict && isSameTaluka ? updatedProfile.villageName : (location.taluka && location.taluka !== location.blockName ? location.blockName : undefined),
+          villageNameMr: isSameDistrict && isSameTaluka ? updatedProfile.villageNameMr : (location.taluka && location.taluka !== location.blockName ? location.blockNameMr : undefined),
+        };
+      }
+
+      persist({ ...state, location, farmerProfile: updatedProfile });
       if (state.farmerProfile?.mobileNumber) {
         updateFarmerLocation(state.farmerProfile.mobileNumber, location);
       }

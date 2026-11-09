@@ -13,19 +13,26 @@ import {
   CheckCircle2,
   AlertCircle,
   Compass,
+  Building2,
 } from "lucide-react";
 import { useTranslation } from "@/i18n/LanguageContext";
 import { useAppState } from "@/hooks/useAppState";
 import { stateInfo } from "@/data/locations";
 import {
+  MAHARASHTRA_LOCATIONS,
+  type DistrictOption,
+  type TalukaOption,
+  type CityOption,
+} from "@/data/maharashtraAdministrativeHierarchy";
+import {
   api,
-  type DistrictDetail,
   type LocationSearchItem,
 } from "@/lib/api";
 
 export default function LocationPage() {
   const { t, language } = useTranslation();
   const router = useRouter();
+  const isMr = language === "mr";
   const { location, setLocation, role, hydrated } = useAppState();
 
   // Search state
@@ -39,12 +46,41 @@ export default function LocationPage() {
   const [isLocating, setIsLocating] = useState(false);
   const [gpsError, setGpsError] = useState<string | null>(null);
 
-  // Administrative hierarchy state (All 36 Districts)
-  const [liveDistricts, setLiveDistricts] = useState<DistrictDetail[]>([]);
-  const [isLoadingDistricts, setIsLoadingDistricts] = useState(true);
-  const [districtId, setDistrictId] = useState(location.districtId);
+  // Cascading Hierarchy Dropdown State (All 36 Districts)
+  const initialDist = useMemo(() => {
+    const found = MAHARASHTRA_LOCATIONS.find(
+      (d) => d.id === location.districtId?.toLowerCase() || d.nameEn.toLowerCase() === location.districtName?.toLowerCase()
+    );
+    return found || MAHARASHTRA_LOCATIONS.find((d) => d.id === "nashik") || MAHARASHTRA_LOCATIONS[0];
+  }, [location.districtId, location.districtName]);
 
-  // Currently resolved candidate preview
+  const [selectedDistrictId, setSelectedDistrictId] = useState<string>(initialDist.id);
+
+  const currentDistrict = useMemo(
+    () => MAHARASHTRA_LOCATIONS.find((d) => d.id === selectedDistrictId) || MAHARASHTRA_LOCATIONS[0],
+    [selectedDistrictId]
+  );
+
+  const initialTaluka = useMemo(() => {
+    const found = currentDistrict.talukas.find(
+      (t) =>
+        t.id === location.blockId?.toLowerCase() ||
+        t.nameEn.toLowerCase() === location.blockName?.toLowerCase() ||
+        t.id === location.taluka?.toLowerCase() ||
+        t.nameEn.toLowerCase() === location.taluka?.toLowerCase()
+    );
+    return found || currentDistrict.talukas[0];
+  }, [currentDistrict, location.blockId, location.blockName, location.taluka]);
+
+  const [selectedTalukaId, setSelectedTalukaId] = useState<string>(initialTaluka?.id || currentDistrict.talukas[0]?.id || "");
+  const [selectedCityId, setSelectedCityId] = useState<string>("all");
+
+  const currentTaluka = useMemo(
+    () => currentDistrict.talukas.find((t) => t.id === selectedTalukaId) || currentDistrict.talukas[0],
+    [currentDistrict, selectedTalukaId]
+  );
+
+  // Candidate location preview
   const [candidate, setCandidate] = useState<{
     blockId: string;
     blockName: string;
@@ -74,35 +110,14 @@ export default function LocationPage() {
     isDynamic: location.isDynamic,
   });
 
-  // Fetch 36 Districts on mount
-  useEffect(() => {
-    let cancelled = false;
-    async function loadDistricts() {
-      setIsLoadingDistricts(true);
-      try {
-        const data = await api.getDistricts();
-        if (!cancelled && data.length > 0) {
-          setLiveDistricts(data);
-        }
-      } catch {
-        // Fallback or retry
-      } finally {
-        if (!cancelled) setIsLoadingDistricts(false);
-      }
-    }
-    loadDistricts();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  // Auth check
+  // Auth guard check
   useEffect(() => {
     if (hydrated && !role) {
       router.replace("/login");
     }
   }, [hydrated, role, router]);
 
+  // Handle Search Input with dual fallback (Local gazetteer + backend nominatim)
   const handleSearchChange = (val: string) => {
     setSearchQuery(val);
     setSearchError(null);
@@ -119,24 +134,83 @@ export default function LocationPage() {
 
     setIsSearching(true);
     searchDebounceRef.current = setTimeout(async () => {
+      const q = val.trim().toLowerCase();
+
+      // 1. Search local authoritative hierarchy instantly
+      const localMatches: LocationSearchItem[] = [];
+      for (const dist of MAHARASHTRA_LOCATIONS) {
+        for (const tal of dist.talukas) {
+          // Check Taluka match
+          if (tal.nameEn.toLowerCase().includes(q) || tal.nameMr.includes(q) || tal.id.includes(q)) {
+            localMatches.push({
+              id: tal.id,
+              name: tal.nameEn,
+              name_mr: tal.nameMr,
+              taluka: tal.nameEn,
+              district_id: dist.id,
+              district_name: dist.nameEn,
+              district_name_mr: dist.nameMr,
+              state_id: "mh",
+              state_name: "Maharashtra",
+              latitude: tal.lat,
+              longitude: tal.lng,
+              display_name: `${tal.nameEn} Taluka, ${dist.nameEn} District, Maharashtra`,
+              precision: "approximate_centroid",
+              source: "local_gazetteer",
+            });
+          }
+
+          // Check Cities/Villages under this taluka
+          for (const city of tal.cities) {
+            if (city.nameEn.toLowerCase().includes(q) || city.nameMr.includes(q) || city.id.includes(q)) {
+              localMatches.push({
+                id: city.id,
+                name: city.nameEn,
+                name_mr: city.nameMr,
+                taluka: tal.nameEn,
+                district_id: dist.id,
+                district_name: dist.nameEn,
+                district_name_mr: dist.nameMr,
+                state_id: "mh",
+                state_name: "Maharashtra",
+                latitude: city.lat,
+                longitude: city.lng,
+                display_name: `${city.nameEn}, ${tal.nameEn} Taluka, ${dist.nameEn} District`,
+                precision: "exact_geocoded_point",
+                source: "local_gazetteer",
+              });
+            }
+          }
+        }
+      }
+
+      // 2. Also try backend Nominatim geocoder if available
       try {
-        const res = await api.searchLocations(val.trim(), 8);
-        setSearchResults(res.results);
-        if (res.results.length === 0) {
+        const apiRes = await api.searchLocations(val.trim(), 5);
+        if (apiRes.results && apiRes.results.length > 0) {
+          // Combine and deduplicate
+          const combined = [...localMatches.slice(0, 4), ...apiRes.results];
+          const unique = combined.filter(
+            (v, i, a) => a.findIndex((t) => t.id === v.id || t.name === v.name) === i
+          );
+          setSearchResults(unique.slice(0, 8));
+        } else {
+          setSearchResults(localMatches.slice(0, 8));
+        }
+      } catch {
+        // Use local matches if backend search fails
+        setSearchResults(localMatches.slice(0, 8));
+      } finally {
+        setIsSearching(false);
+        if (localMatches.length === 0) {
           setSearchError(
-            language === "mr"
+            isMr
               ? "महाराष्ट्रात कोणतेही स्थान आढळले नाही. कृपया तालुका किंवा पिन कोड तपासा."
               : "No locations found in Maharashtra. Try searching for a nearby taluka or PIN code."
           );
         }
-      } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : "Search failed";
-        setSearchError(msg);
-        setSearchResults([]);
-      } finally {
-        setIsSearching(false);
       }
-    }, 350);
+    }, 300);
   };
 
   const handleSelectSearchResult = async (item: LocationSearchItem) => {
@@ -157,7 +231,7 @@ export default function LocationPage() {
         districtNameMr: item.district_name_mr || resolved.district_name,
         latitude: resolved.latitude,
         longitude: resolved.longitude,
-        taluka: item.taluka,
+        taluka: item.taluka || resolved.name,
         postalCode: item.postal_code,
         displayName: item.display_name,
         isDynamic: true,
@@ -176,7 +250,7 @@ export default function LocationPage() {
         districtNameMr: item.district_name_mr,
         latitude: item.latitude,
         longitude: item.longitude,
-        taluka: item.taluka,
+        taluka: item.taluka || item.name,
         postalCode: item.postal_code,
         displayName: item.display_name,
         isDynamic: true,
@@ -190,7 +264,7 @@ export default function LocationPage() {
   const handleUseGPS = () => {
     if (!navigator.geolocation) {
       setGpsError(
-        language === "mr"
+        isMr
           ? "आपल्या ब्राउझरमध्ये GPS स्थान समर्थित नाही."
           : "Geolocation is not supported by your browser."
       );
@@ -231,57 +305,101 @@ export default function LocationPage() {
         setIsLocating(false);
         setGpsError(
           err.code === 1
-            ? (language === "mr" ? "स्थान परवानगी नाकारली गेली." : "Location access permission was denied.")
-            : (language === "mr" ? "GPS स्थान प्राप्त करण्यास अयशस्वी." : "Could not determine GPS position.")
+            ? (isMr ? "स्थान परवानगी नाकारली गेली." : "Location access permission was denied.")
+            : (isMr ? "GPS स्थान प्राप्त करण्यास अयशस्वी." : "Could not determine GPS position.")
         );
       },
       { timeout: 10000, enableHighAccuracy: true }
     );
   };
 
-  const currentDistrict = useMemo(
-    () => liveDistricts.find((d) => d.id === districtId) ?? liveDistricts[0],
-    [liveDistricts, districtId]
-  );
-
+  // District dropdown change
   const handleDistrictChange = (dId: string) => {
-    setDistrictId(dId);
-    const d = liveDistricts.find((item) => item.id === dId);
-    if (d && d.member_blocks && d.member_blocks.length > 0) {
-      const firstBlock = d.member_blocks[0];
+    setSelectedDistrictId(dId);
+    const dist = MAHARASHTRA_LOCATIONS.find((d) => d.id === dId);
+    if (dist && dist.talukas.length > 0) {
+      const firstTal = dist.talukas[0];
+      setSelectedTalukaId(firstTal.id);
+      setSelectedCityId("all");
       setCandidate({
-        blockId: firstBlock.id,
-        blockName: firstBlock.name,
-        blockNameMr: firstBlock.name_mr || firstBlock.name,
-        districtId: d.id,
-        districtName: d.name,
-        districtNameMr: d.name_mr || d.name,
-        latitude: firstBlock.latitude,
-        longitude: firstBlock.longitude,
-        displayName: `${firstBlock.name}, ${d.name}, Maharashtra`,
+        blockId: firstTal.id,
+        blockName: firstTal.nameEn,
+        blockNameMr: firstTal.nameMr,
+        districtId: dist.id,
+        districtName: dist.nameEn,
+        districtNameMr: dist.nameMr,
+        latitude: firstTal.lat,
+        longitude: firstTal.lng,
+        taluka: firstTal.nameEn,
+        displayName: `${firstTal.nameEn} Taluka, ${dist.nameEn} District, Maharashtra`,
         isDynamic: false,
       });
     }
   };
 
-  const handleBlockChange = (bId: string) => {
-    const b = currentDistrict?.member_blocks?.find((item) => item.id === bId);
-    if (b && currentDistrict) {
+  // Taluka dropdown change
+  const handleTalukaChange = (tId: string) => {
+    setSelectedTalukaId(tId);
+    setSelectedCityId("all");
+    const tal = currentDistrict.talukas.find((t) => t.id === tId);
+    if (tal) {
       setCandidate({
-        blockId: b.id,
-        blockName: b.name,
-        blockNameMr: b.name_mr || b.name,
+        blockId: tal.id,
+        blockName: tal.nameEn,
+        blockNameMr: tal.nameMr,
         districtId: currentDistrict.id,
-        districtName: currentDistrict.name,
-        districtNameMr: currentDistrict.name_mr || currentDistrict.name,
-        latitude: b.latitude,
-        longitude: b.longitude,
-        displayName: `${b.name}, ${currentDistrict.name}, Maharashtra`,
+        districtName: currentDistrict.nameEn,
+        districtNameMr: currentDistrict.nameMr,
+        latitude: tal.lat,
+        longitude: tal.lng,
+        taluka: tal.nameEn,
+        displayName: `${tal.nameEn} Taluka, ${currentDistrict.nameEn} District, Maharashtra`,
         isDynamic: false,
       });
     }
   };
 
+  // Village / Town dropdown change
+  const handleCityChange = (cId: string) => {
+    setSelectedCityId(cId);
+    if (!currentTaluka) return;
+
+    if (cId === "all") {
+      setCandidate({
+        blockId: currentTaluka.id,
+        blockName: currentTaluka.nameEn,
+        blockNameMr: currentTaluka.nameMr,
+        districtId: currentDistrict.id,
+        districtName: currentDistrict.nameEn,
+        districtNameMr: currentDistrict.nameMr,
+        latitude: currentTaluka.lat,
+        longitude: currentTaluka.lng,
+        taluka: currentTaluka.nameEn,
+        displayName: `${currentTaluka.nameEn} Taluka, ${currentDistrict.nameEn} District, Maharashtra`,
+        isDynamic: false,
+      });
+    } else {
+      const city = currentTaluka.cities.find((c) => c.id === cId);
+      if (city) {
+        setCandidate({
+          blockId: city.id,
+          blockName: city.nameEn,
+          blockNameMr: city.nameMr,
+          districtId: currentDistrict.id,
+          districtName: currentDistrict.nameEn,
+          districtNameMr: currentDistrict.nameMr,
+          latitude: city.lat,
+          longitude: city.lng,
+          taluka: currentTaluka.nameEn,
+          displayName: `${city.nameEn}, ${currentTaluka.nameEn} Taluka, ${currentDistrict.nameEn} District`,
+          isDynamic: true,
+          precision: "exact_geocoded_point",
+        });
+      }
+    }
+  };
+
+  // Confirm selection and commit to AppState
   const confirmLocation = () => {
     setLocation({
       stateId: stateInfo.id,
@@ -304,19 +422,16 @@ export default function LocationPage() {
 
   if (!hydrated || !role) return null;
 
-  const isMr = language === "mr";
-
   return (
     <div className="mx-auto max-w-3xl space-y-8 bg-[#F4F0E5] text-[#252923]">
-      
       {/* ── Page Header ── */}
       <div className="border-b-2 border-[#123C32]/20 pb-5">
         <div className="flex items-center gap-2">
-          <span className="rounded border border-[#123C32] bg-[#123C32] px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wider text-[#F4F0E5]">
-            Location Selector
+          <span className="rounded border border-[#123C32] bg-[#123C32] px-2.5 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wider text-[#F4F0E5]">
+            {isMr ? "स्थान निवड व शोध" : "Location Selector"}
           </span>
           <span className="font-mono text-xs font-semibold text-[#123C32]">
-            Maharashtra · 36 Districts
+            {isMr ? "महाराष्ट्र शासन • सर्व ३६ जिल्हे व ३५१ तालुके" : "Maharashtra · All 36 Districts & 351 Talukas"}
           </span>
         </div>
         <h1 className="mt-1 font-display text-2xl font-bold tracking-tight text-[#123C32] sm:text-3xl">
@@ -324,7 +439,7 @@ export default function LocationPage() {
         </h1>
         <p className="mt-1 font-sans text-xs text-[#252923]/70 sm:text-sm">
           {isMr
-            ? "महाराष्ट्रातील कोणत्याही गाव, तालुका, जिल्हा, किंवा पिन कोड शोधा किंवा थेट नकाशावरून निवडा."
+            ? "महाराष्ट्रातील कोणत्याही गाव, शहर, तालुका, जिल्हा, किंवा पिन कोड शोधा किंवा खालील ३-स्तरीय ड्रॉपडाउनमधून निवडा."
             : "Locate any village, town, taluka, or PIN code across all 36 districts of Maharashtra."}
         </p>
       </div>
@@ -334,10 +449,10 @@ export default function LocationPage() {
         <div className="flex items-center justify-between">
           <label className="flex items-center gap-2 font-mono text-xs font-bold uppercase tracking-wider text-[#123C32]">
             <Search size={15} />
-            <span>1. Search Place, Taluka, or PIN Code</span>
+            <span>{isMr ? "१. गाव, शहर, तालुका किंवा पिन कोड शोधा" : "1. Search Place, Taluka, or PIN Code"}</span>
           </label>
           <span className="rounded border border-[#123C32]/20 bg-[#F4F0E5] px-2 py-0.5 font-mono text-[10px] font-bold text-[#123C32]">
-            Statewide Geocoding
+            {isMr ? "राज्यव्यापी शोध" : "Statewide Geocoding"}
           </span>
         </div>
 
@@ -346,13 +461,13 @@ export default function LocationPage() {
             type="text"
             value={searchQuery}
             onChange={(e) => handleSearchChange(e.target.value)}
-            placeholder="e.g. Alibaug, Baramati, Shirur, Nagpur, 410206..."
+            placeholder={isMr ? "उदा. निफाड, वाशिंद, बारामती, शहापूर, लासलगाव, ४२२२०९..." : "e.g. Niphad, Vasind, Baramati, Shahapur, Lasalgaon, 422209..."}
             className="w-full rounded-lg border-2 border-[#123C32]/30 bg-[#F4F0E5]/50 px-4 py-3 font-sans text-sm font-semibold text-[#252923] outline-none transition focus:border-[#123C32] focus:bg-white"
           />
           {isSearching && (
             <div className="absolute right-3.5 top-3.5 flex items-center gap-1.5 font-mono text-xs text-[#123C32]">
               <RefreshCw size={13} className="animate-spin text-[#123C32]" />
-              <span>Searching...</span>
+              <span>{isMr ? "शोधत आहे..." : "Searching..."}</span>
             </div>
           )}
         </div>
@@ -373,11 +488,14 @@ export default function LocationPage() {
                     <span className="font-display font-bold text-sm text-[#252923]">
                       {isMr ? item.name_mr : item.name}
                     </span>
-                    {item.postal_code && (
+                    {item.taluka && (
                       <span className="rounded border border-[#123C32]/30 bg-[#F4F0E5] px-1.5 py-0.5 font-mono text-[10px] font-bold text-[#123C32]">
-                        PIN {item.postal_code}
+                        {isMr ? `तालुका: ${item.taluka}` : `Taluka: ${item.taluka}`}
                       </span>
                     )}
+                    <span className="rounded bg-[#172B4D]/10 px-1.5 py-0.5 font-mono text-[10px] text-[#172B4D]">
+                      {isMr ? item.district_name_mr : item.district_name}
+                    </span>
                   </div>
                   <p className="mt-0.5 font-sans text-xs text-[#252923]/70 pl-5">
                     {item.display_name}
@@ -398,7 +516,7 @@ export default function LocationPage() {
         {/* GPS Quick Action */}
         <div className="flex flex-wrap items-center justify-between gap-3 border-t-2 border-[#123C32]/10 pt-4">
           <p className="font-sans text-xs text-[#252923]/70">
-            Or detect current field coordinates via device GPS:
+            {isMr ? "किंवा डिव्हाइस GPS द्वारे शेताचे थेट अक्षांश-रेखांश मिळवा:" : "Or detect current field coordinates via device GPS:"}
           </p>
           <button
             type="button"
@@ -411,7 +529,7 @@ export default function LocationPage() {
             ) : (
               <Navigation size={13} className="text-[#E6A52E]" />
             )}
-            <span>Use GPS Location</span>
+            <span>{isMr ? "GPS स्थान वापरा" : "Use GPS Location"}</span>
           </button>
         </div>
 
@@ -420,39 +538,73 @@ export default function LocationPage() {
         )}
       </div>
 
-      {/* ── 2. Administrative District & Taluka Cascading Selector ── */}
+      {/* ── 2. Administrative 3-Tier Cascading Selector (District -> Taluka -> Village) ── */}
       <div className="rounded-xl border-2 border-[#123C32] bg-white p-6 shadow-[4px_4px_0px_#123C32] space-y-4">
-        <label className="flex items-center gap-2 font-mono text-xs font-bold uppercase tracking-wider text-[#123C32]">
-          <Compass size={15} />
-          <span>2. Browse by District & Taluka</span>
-        </label>
+        <div className="flex items-center justify-between">
+          <label className="flex items-center gap-2 font-mono text-xs font-bold uppercase tracking-wider text-[#123C32]">
+            <Compass size={15} />
+            <span>{isMr ? "२. जिल्हा, तालुका व गाव निवडा" : "2. Browse by District, Taluka & Village"}</span>
+          </label>
+          <span className="font-mono text-[10px] text-[#252923]/60">
+            {MAHARASHTRA_LOCATIONS.length} {isMr ? "जिल्हे उपलब्ध" : "Districts Available"}
+          </span>
+        </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-3">
+          {/* 1. District Dropdown */}
           <div>
-            <label className="font-mono text-xs font-bold uppercase text-[#252923]/70">District:</label>
+            <label className="font-mono text-xs font-bold uppercase text-[#252923]/70">
+              {isMr ? "जिल्हा (District):" : "District:"}
+            </label>
             <select
-              value={districtId}
+              value={selectedDistrictId}
               onChange={(e) => handleDistrictChange(e.target.value)}
               className="mt-1.5 w-full rounded-lg border-2 border-[#123C32]/30 bg-[#F4F0E5]/50 px-3 py-2.5 font-sans text-sm font-semibold text-[#252923] outline-none transition focus:border-[#123C32] focus:bg-white"
             >
-              {liveDistricts.map((d) => (
+              {MAHARASHTRA_LOCATIONS.map((d) => (
                 <option key={d.id} value={d.id}>
-                  {isMr ? d.name_mr : d.name} ({d.member_blocks?.length ?? 0} talukas)
+                  {isMr ? d.nameMr : d.nameEn} ({d.talukas.length} {isMr ? "तालुके" : "talukas"})
                 </option>
               ))}
             </select>
           </div>
 
+          {/* 2. Taluka Dropdown */}
           <div>
-            <label className="font-mono text-xs font-bold uppercase text-[#252923]/70">Taluka / Block:</label>
+            <label className="font-mono text-xs font-bold uppercase text-[#252923]/70">
+              {isMr ? "तालुका (Taluka):" : "Taluka / Block:"}
+            </label>
             <select
-              value={candidate.blockId}
-              onChange={(e) => handleBlockChange(e.target.value)}
+              value={selectedTalukaId}
+              onChange={(e) => handleTalukaChange(e.target.value)}
               className="mt-1.5 w-full rounded-lg border-2 border-[#123C32]/30 bg-[#F4F0E5]/50 px-3 py-2.5 font-sans text-sm font-semibold text-[#252923] outline-none transition focus:border-[#123C32] focus:bg-white"
             >
-              {currentDistrict?.member_blocks?.map((b) => (
-                <option key={b.id} value={b.id}>
-                  {isMr ? b.name_mr : b.name}
+              {currentDistrict.talukas.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {isMr ? t.nameMr : t.nameEn}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* 3. Village / Town Dropdown */}
+          <div>
+            <label className="font-mono text-xs font-bold uppercase text-[#252923]/70">
+              {isMr ? "गाव / शहर (Village / Town):" : "Village / Town:"}
+            </label>
+            <select
+              value={selectedCityId}
+              onChange={(e) => handleCityChange(e.target.value)}
+              className="mt-1.5 w-full rounded-lg border-2 border-[#123C32]/30 bg-[#F4F0E5]/50 px-3 py-2.5 font-sans text-sm font-semibold text-[#252923] outline-none transition focus:border-[#123C32] focus:bg-white"
+            >
+              <option value="all">
+                {isMr
+                  ? `संपूर्ण ${currentTaluka?.nameMr || ""} तालुका`
+                  : `Entire ${currentTaluka?.nameEn || ""} Taluka`}
+              </option>
+              {currentTaluka?.cities.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {isMr ? c.nameMr : c.nameEn}
                 </option>
               ))}
             </select>
@@ -464,20 +616,43 @@ export default function LocationPage() {
       <div className="rounded-xl border-3 border-[#123C32] bg-white p-6 shadow-[6px_6px_0px_#123C32] space-y-4">
         <div className="flex items-center justify-between border-b-2 border-[#123C32]/15 pb-3">
           <span className="font-mono text-xs font-bold uppercase tracking-wider text-[#123C32]">
-            Selected Location Preview
+            {isMr ? "निवडलेल्या स्थानाचे पूर्वावलोकन" : "Selected Location Preview"}
           </span>
           <span className="flex items-center gap-1 rounded border border-[#123C32] bg-[#F4F0E5] px-2 py-0.5 font-mono text-[10px] font-bold text-[#123C32]">
             <ShieldCheck size={12} className="text-[#3B8B61]" />
-            Ready to Set
+            {isMr ? "निश्चित करण्यासाठी तयार" : "Ready to Set"}
           </span>
         </div>
 
         <div>
-          <h3 className="font-display text-2xl font-black text-[#123C32]">
-            {isMr ? candidate.blockNameMr : candidate.blockName}
-          </h3>
-          <p className="font-sans text-xs sm:text-sm text-[#252923]/75 mt-0.5">
-            {candidate.displayName || `${candidate.blockName}, ${candidate.districtName}, Maharashtra`}
+          <div className="flex items-center gap-2">
+            <MapPin size={20} className="text-[#123C32]" />
+            <h3 className="font-display text-2xl font-black text-[#123C32]">
+              {isMr ? candidate.blockNameMr : candidate.blockName}
+            </h3>
+          </div>
+          <p className="font-sans text-xs sm:text-sm text-[#252923]/75 mt-1">
+            {candidate.taluka && candidate.taluka !== candidate.blockName ? (
+              isMr ? (
+                <span>
+                  तालुका: <strong>{candidate.taluka}</strong> · जिल्हा: <strong>{candidate.districtNameMr || candidate.districtName}</strong>, महाराष्ट्र
+                </span>
+              ) : (
+                <span>
+                  Taluka: <strong>{candidate.taluka}</strong> · District: <strong>{candidate.districtName}</strong>, Maharashtra
+                </span>
+              )
+            ) : (
+              isMr ? (
+                <span>
+                  जिल्हा: <strong>{candidate.districtNameMr || candidate.districtName}</strong>, महाराष्ट्र
+                </span>
+              ) : (
+                <span>
+                  District: <strong>{candidate.districtName}</strong>, Maharashtra
+                </span>
+              )
+            )}
           </p>
           <p className="font-mono text-xs text-[#252923]/60 mt-1">
             Centroid: {candidate.latitude.toFixed(3)}°N, {candidate.longitude.toFixed(3)}°E
@@ -489,12 +664,10 @@ export default function LocationPage() {
           onClick={confirmLocation}
           className="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-[#123C32] bg-[#123C32] py-3.5 font-mono text-xs font-bold uppercase tracking-wider text-[#F4F0E5] shadow-[4px_4px_0px_#252923] hover:bg-[#172B4D] transition"
         >
-          <CheckCircle2 size={16} className="text-[#E6A52E]" />
-          <span>Confirm & Launch Cockpit</span>
+          <span>{isMr ? "स्थान निश्चित करा (Confirm Location)" : "Set Location & Continue"}</span>
           <ArrowRight size={14} />
         </button>
       </div>
-
     </div>
   );
 }
