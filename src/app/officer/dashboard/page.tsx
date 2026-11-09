@@ -336,7 +336,7 @@ export default function OfficerDashboard() {
           }`}
         >
           <Radio size={15} />
-          <span>{isMr ? "३. तज्ज्ञ सल्ला व थेट प्रसारण स्टुडिओ" : "3. Advisory Broadcast Studio"}</span>
+          <span>{isMr ? "३. ग्रामीण शेतकरी SMS व थेट प्रसारण" : "3. Rural 2G SMS & Advisory Broadcast"}</span>
         </button>
 
         <button
@@ -683,11 +683,23 @@ export default function OfficerDashboard() {
         />
       )}
 
-      {/* ── TAB 3: EXPERT ADVISORY STUDIO ── */}
+      {/* ── TAB 3: RURAL 2G SMS, IVRS & ADVISORY BROADCAST CONSOLE ── */}
       {activeTab === "advisory" && (
-        <ExpertAdvisoryStudio
-          initialTaluka={inspectedItem?.block_name || "Niphad"}
-          initialDistrict={inspectedItem?.district_name || "Nashik"}
+        <RuralSmsSimulator
+          blockName={inspectedItem ? (isMr ? inspectedItem.block_name_mr : inspectedItem.block_name) : "Niphad"}
+          districtName={inspectedItem?.district_name || "Nashik"}
+          riskLevel={inspectedItem?.overall_risk ?? "moderate"}
+          primaryDriver={inspectRisk?.risk_drivers?.[0]?.name}
+          forecastRainMm={
+            inspectForecast?.forecast?.length
+              ? Math.round(
+                  inspectForecast.forecast.reduce(
+                    (acc, curr) => acc + (curr.precipitation_sum_mm || 0),
+                    0
+                  ) * 10
+                ) / 10
+              : 14.5
+          }
         />
       )}
 
